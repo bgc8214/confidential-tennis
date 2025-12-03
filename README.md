@@ -17,84 +17,54 @@
 - React 18 + TypeScript
 - Vite
 - Tailwind CSS
+- Supabase Client
 
 ### Backend
-- Node.js + Express + TypeScript
-- PostgreSQL
-- node-postgres (pg)
+- Supabase (PostgreSQL + REST API)
+
+### 배포
+- Frontend: Vercel (무료)
+- Backend/DB: Supabase (무료)
 
 ## 프로젝트 구조
 
 ```
 confidential-tennis/
-├── frontend/        # React 프론트엔드
-├── backend/         # Express 백엔드
-├── database/        # DB 스키마 및 설정
-├── docs/           # 문서
-├── prd.md          # 프로젝트 요구사항 문서
-└── claude.md       # 개발 가이드
+├── frontend/           # React 프론트엔드
+│   ├── src/
+│   │   ├── lib/       # Supabase 클라이언트
+│   │   ├── services/  # API 서비스 레이어
+│   │   ├── utils/     # 스케줄 생성 알고리즘
+│   │   ├── types/     # TypeScript 타입
+│   │   ├── components/# React 컴포넌트
+│   │   └── pages/     # 페이지 컴포넌트
+├── database/          # DB 스키마 및 설정
+├── prd.md            # 프로젝트 요구사항 문서
+└── claude.md         # 개발 가이드
 ```
 
 ## 설치 및 실행
 
-### 1. 데이터베이스 설정
+### 1. Supabase 프로젝트 설정
 
-PostgreSQL 설치:
-```bash
-# macOS
-brew install postgresql@15
-brew services start postgresql@15
+1. [Supabase](https://supabase.com) 가입
+2. 새 프로젝트 생성 (`tennis-club-schedule`)
+3. SQL Editor에서 `database/schema.sql` 실행
+4. Settings → API에서 URL과 anon key 복사
 
-# Ubuntu/Debian
-sudo apt install postgresql postgresql-contrib
-sudo systemctl start postgresql
-```
+자세한 설명은 [database/supabase-setup.md](database/supabase-setup.md)를 참고하세요.
 
-데이터베이스 생성 및 스키마 적용:
-```bash
-# PostgreSQL 접속
-psql postgres
-
-# 데이터베이스 생성
-CREATE DATABASE tennis_club;
-\c tennis_club
-
-# 스키마 적용
-\i database/schema.sql
-```
-
-또는:
-```bash
-psql -U postgres -d tennis_club -f database/schema.sql
-```
-
-자세한 설명은 [database/README.md](database/README.md)를 참고하세요.
-
-### 2. 백엔드 설정
-
-```bash
-cd backend
-
-# 의존성 설치
-npm install
-
-# 환경 변수 설정
-cp .env.example .env
-# .env 파일을 열어 DATABASE_URL 등을 설정
-
-# 개발 서버 실행
-npm run dev
-```
-
-백엔드는 기본적으로 `http://localhost:3000`에서 실행됩니다.
-
-### 3. 프론트엔드 설정
+### 2. 프론트엔드 설정
 
 ```bash
 cd frontend
 
 # 의존성 설치
 npm install
+
+# 환경 변수 설정
+cp .env.example .env
+# .env 파일에 Supabase URL과 Key 입력
 
 # 개발 서버 실행
 npm run dev
@@ -110,9 +80,10 @@ npm run dev
 
 #### Phase 1 (MVP - 4주)
 - [x] 프로젝트 초기 설정
-- [ ] 회원 관리 (CRUD)
+- [x] Supabase 전환
+- [x] 스케줄 생성 알고리즘 구현
+- [ ] 회원 관리 UI
 - [ ] 참석자 선택 UI
-- [ ] 기본 스케줄 자동 생성 알고리즘
 - [ ] 스케줄 표시 화면
 - [ ] 스케줄 저장 및 조회
 
@@ -127,43 +98,61 @@ npm run dev
 - [ ] 모바일 최적화
 - [ ] 공유 기능 (카카오톡/링크)
 
-## API 엔드포인트
+## 주요 서비스 레이어
 
-### Members
-```
-GET    /api/members           # 전체 회원 조회
-GET    /api/members/:id       # 특정 회원 조회
-POST   /api/members           # 회원 등록
-PUT    /api/members/:id       # 회원 수정
-DELETE /api/members/:id       # 회원 삭제
-```
+### Member Service
+```typescript
+import { memberService } from './services/memberService';
 
-### Schedules
-```
-GET    /api/schedules              # 스케줄 목록
-GET    /api/schedules/:id          # 특정 스케줄 조회
-POST   /api/schedules              # 스케줄 생성
-PUT    /api/schedules/:id          # 스케줄 수정
-DELETE /api/schedules/:id          # 스케줄 삭제
+// 전체 회원 조회
+const members = await memberService.getAll();
+
+// 회원 등록
+const newMember = await memberService.create({
+  name: '홍길동',
+  phone: '010-1234-5678',
+  is_active: true
+});
 ```
 
-### Matches
-```
-POST   /api/matches/generate       # 스케줄 자동 생성
-GET    /api/matches/:scheduleId    # 스케줄별 경기 조회
-PUT    /api/matches/:id            # 경기 수정
+### Schedule Service
+```typescript
+import { scheduleService } from './services/scheduleService';
+
+// 스케줄 생성
+const schedule = await scheduleService.create({
+  date: '2024-12-07',
+  start_time: '10:00',
+  end_time: '13:00',
+  status: 'planned'
+});
+
+// 참석자 등록
+await scheduleService.addAttendances(schedule.id, [
+  { member_id: 1, is_guest: false },
+  { guest_name: '김게스트', is_guest: true }
+]);
 ```
 
-상세한 API 문서는 추후 추가 예정입니다.
+### Schedule Generation
+```typescript
+import { generateSchedule, convertMatchesToDbFormat } from './utils/scheduleGenerator';
+
+// 스케줄 자동 생성
+const generatedMatches = generateSchedule({
+  attendees,
+  constraints,
+  startTime: '10:00'
+});
+
+// DB 형식으로 변환 후 저장
+const dbMatches = convertMatchesToDbFormat(generatedMatches, scheduleId);
+await scheduleService.addMatches(dbMatches);
+```
 
 ## 테스트
 
 ```bash
-# Backend
-cd backend
-npm test
-
-# Frontend
 cd frontend
 npm test
 ```
@@ -177,13 +166,9 @@ npm run build
 vercel deploy --prod
 ```
 
-### Backend (Railway)
-```bash
-cd backend
-railway login
-railway init
-railway up
-```
+### Supabase 설정
+- Supabase Dashboard에서 Production 환경 확인
+- RLS(Row Level Security) 정책 설정 (선택사항)
 
 ## 기여 방법
 
@@ -204,4 +189,5 @@ railway up
 ---
 
 **프로젝트 시작일**: 2024-12-03
-**현재 버전**: v0.1.0 (초기 설정 완료)
+**현재 버전**: v0.2.0 (Supabase 전환 완료)
+**아키텍처**: Frontend-only with Supabase
