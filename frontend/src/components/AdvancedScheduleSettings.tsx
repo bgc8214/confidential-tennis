@@ -133,10 +133,6 @@ export default function AdvancedScheduleSettings({
     return settings.totalMatches * settings.matchDuration;
   };
 
-  const getCalculatedMatchDuration = () => {
-    return Math.floor(calculateTotalDuration() / settings.totalMatches);
-  };
-
   return (
     <div className="bg-white rounded-2xl shadow-lg p-6 space-y-4 border-2 border-gray-100">
       <div className="flex items-center justify-between">

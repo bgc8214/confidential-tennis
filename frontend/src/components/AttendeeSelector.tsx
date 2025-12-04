@@ -29,23 +29,6 @@ export default function AttendeeSelector({
     }
   };
 
-  const skillLevelLabel = (level?: string) => {
-    switch (level) {
-      case 'beginner': return '초급';
-      case 'intermediate': return '중급';
-      case 'advanced': return '상급';
-      default: return '-';
-    }
-  };
-
-  const skillLevelColor = (level?: string) => {
-    switch (level) {
-      case 'beginner': return 'bg-green-100 text-green-800';
-      case 'intermediate': return 'bg-blue-100 text-blue-800';
-      case 'advanced': return 'bg-purple-100 text-purple-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6">

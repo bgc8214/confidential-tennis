@@ -2,7 +2,6 @@ import { useState } from 'react';
 import type { Member } from '../types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
-import { Label } from './ui/label';
 
 export interface ConstraintData {
   excludeLastMatch: number[]; // 마지막 경기 제외할 회원 ID 목록
