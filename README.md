@@ -23,7 +23,7 @@
 - Supabase (PostgreSQL + REST API)
 
 ### 배포
-- Frontend: Vercel (무료)
+- Frontend: GitHub Pages (https://bgc8214.github.io/confidential-tennis/)
 - Backend/DB: Supabase (무료)
 
 ## 프로젝트 구조
@@ -159,16 +159,34 @@ npm test
 
 ## 배포
 
-### Frontend (Vercel)
+### Frontend (GitHub Pages)
+
+이 프로젝트는 GitHub Actions를 통해 자동으로 배포됩니다.
+
+1. **GitHub Secrets 설정** (Settings → Secrets and variables → Actions):
+   - `VITE_SUPABASE_URL`: Supabase 프로젝트 URL
+   - `VITE_SUPABASE_ANON_KEY`: Supabase anon key
+
+2. **자동 배포**:
+   - `main` 브랜치에 푸시하면 자동으로 빌드 및 배포됩니다
+   - GitHub Actions 워크플로우: `.github/workflows/deploy.yml`
+
+3. **GitHub Pages 설정** (Settings → Pages):
+   - Source: GitHub Actions
+
+**배포 URL**: https://bgc8214.github.io/confidential-tennis/
+
+### 수동 배포 (로컬)
 ```bash
 cd frontend
 npm run build
-vercel deploy --prod
+# dist 폴더를 직접 배포 서버에 업로드
 ```
 
 ### Supabase 설정
 - Supabase Dashboard에서 Production 환경 확인
 - RLS(Row Level Security) 정책 설정 (선택사항)
+- 환경 변수 확인 및 업데이트
 
 ## 기여 방법
 
