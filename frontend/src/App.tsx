@@ -15,7 +15,7 @@ import AuthCallback from './pages/AuthCallback';
 
 function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/confidential-tennis">
       <Routes>
         {/* 공개 라우트 */}
         <Route path="/login" element={<Login />} />
