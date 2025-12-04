@@ -21,7 +21,7 @@ export default defineConfig({
         orientation: 'portrait-primary',
         icons: [
           {
-            src: '/vite.svg',
+            src: '/confidential-tennis/vite.svg',
             sizes: 'any',
             type: 'image/svg+xml',
             purpose: 'any maskable'
