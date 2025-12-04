@@ -43,8 +43,8 @@ export default function GuestInput({
         게스트 추가
       </h3>
 
-      {/* Guest Input Form */}
-      <form onSubmit={handleSubmit} className="flex gap-2 mb-4">
+      {/* Guest Input */}
+      <div className="flex gap-2 mb-4">
         <input
           type="text"
           value={guestName}
@@ -52,16 +52,23 @@ export default function GuestInput({
             setGuestName(e.target.value);
             setError(null);
           }}
+          onKeyPress={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              handleSubmit(e);
+            }
+          }}
           placeholder="게스트 이름 입력"
           className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         <button
-          type="submit"
+          type="button"
+          onClick={handleSubmit}
           className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition"
         >
           추가
         </button>
-      </form>
+      </div>
 
       {/* Error Message */}
       {error && (

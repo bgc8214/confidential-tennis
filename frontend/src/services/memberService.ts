@@ -2,11 +2,12 @@ import { supabase } from '../lib/supabase';
 import type { Member } from '../types';
 
 export const memberService = {
-  // 전체 회원 조회
-  async getAll(): Promise<Member[]> {
+  // 클럽별 전체 회원 조회
+  async getAll(clubId: number): Promise<Member[]> {
     const { data, error } = await supabase
       .from('members')
       .select('*')
+      .eq('club_id', clubId)
       .eq('is_active', true)
       .order('name');
 
@@ -27,10 +28,10 @@ export const memberService = {
   },
 
   // 회원 등록
-  async create(member: Omit<Member, 'id' | 'created_at' | 'updated_at'>): Promise<Member> {
+  async create(clubId: number, member: Omit<Member, 'id' | 'club_id' | 'created_at' | 'updated_at'>): Promise<Member> {
     const { data, error } = await supabase
       .from('members')
-      .insert([member])
+      .insert([{ ...member, club_id: clubId }])
       .select()
       .single();
 

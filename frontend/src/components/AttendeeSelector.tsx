@@ -89,11 +89,15 @@ export default function AttendeeSelector({
                   <div className="font-medium text-gray-900">
                     {member.name}
                   </div>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className={`text-xs px-2 py-0.5 rounded ${skillLevelColor(member.skill_level)}`}>
-                      {skillLevelLabel(member.skill_level)}
-                    </span>
-                  </div>
+                  {member.gender && (
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className={`text-xs px-2 py-0.5 rounded ${
+                        member.gender === 'male' ? 'bg-blue-100 text-blue-800' : 'bg-pink-100 text-pink-800'
+                      }`}>
+                        {member.gender === 'male' ? '남' : '여'}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </label>
             );

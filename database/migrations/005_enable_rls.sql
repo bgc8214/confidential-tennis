@@ -1,0 +1,14 @@
+-- ============================================
+-- 마이그레이션 5: RLS 활성화
+-- ============================================
+
+ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE clubs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE club_members ENABLE ROW LEVEL SECURITY;
+ALTER TABLE members ENABLE ROW LEVEL SECURITY;
+ALTER TABLE schedules ENABLE ROW LEVEL SECURITY;
+ALTER TABLE attendances ENABLE ROW LEVEL SECURITY;
+ALTER TABLE matches ENABLE ROW LEVEL SECURITY;
+ALTER TABLE constraints ENABLE ROW LEVEL SECURITY;
+
+
