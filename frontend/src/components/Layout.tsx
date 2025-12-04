@@ -31,7 +31,6 @@ export default function Layout() {
     }
   };
 
-  const isPublicRoute = location.pathname === '/';
   const isLoggedIn = !!user;
 
   return (
