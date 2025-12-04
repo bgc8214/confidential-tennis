@@ -2,14 +2,15 @@ import { supabase } from '../lib/supabase';
 import type { Schedule, Attendance, Match, Constraint } from '../types';
 
 export const scheduleService = {
-  // 스케줄 목록 조회 (월별)
-  async getByMonth(year: number, month: number): Promise<Schedule[]> {
+  // 클럽별 스케줄 목록 조회 (월별)
+  async getByMonth(clubId: number, year: number, month: number): Promise<Schedule[]> {
     const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
     const endDate = `${year}-${String(month).padStart(2, '0')}-31`;
 
     const { data, error } = await supabase
       .from('schedules')
       .select('*')
+      .eq('club_id', clubId)
       .gte('date', startDate)
       .lte('date', endDate)
       .order('date', { ascending: false });
@@ -18,11 +19,12 @@ export const scheduleService = {
     return data || [];
   },
 
-  // 특정 날짜 스케줄 조회
-  async getByDate(date: string): Promise<Schedule | null> {
+  // 클럽별 특정 날짜 스케줄 조회
+  async getByDate(clubId: number, date: string): Promise<Schedule | null> {
     const { data, error } = await supabase
       .from('schedules')
       .select('*')
+      .eq('club_id', clubId)
       .eq('date', date)
       .single();
 
@@ -30,16 +32,71 @@ export const scheduleService = {
     return data;
   },
 
-  // 스케줄 생성
-  async create(schedule: Omit<Schedule, 'id' | 'created_at' | 'updated_at'>): Promise<Schedule> {
+  // ID로 스케줄 조회
+  async getById(id: number): Promise<Schedule | null> {
     const { data, error } = await supabase
       .from('schedules')
-      .insert([schedule])
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error && error.code !== 'PGRST116') throw error;
+    return data;
+  },
+
+  // 공개 링크 생성 (16자리 대문자)
+  generatePublicLink(): string {
+    return Math.random().toString(36).substring(2, 18).toUpperCase();
+  },
+
+  // 스케줄 생성
+  async create(clubId: number, schedule: Omit<Schedule, 'id' | 'club_id' | 'created_at' | 'updated_at'>, generatePublicLink: boolean = false): Promise<Schedule> {
+    const scheduleData: any = { ...schedule, club_id: clubId };
+    
+    if (generatePublicLink) {
+      scheduleData.public_link = this.generatePublicLink();
+    }
+
+    const { data, error } = await supabase
+      .from('schedules')
+      .insert([scheduleData])
       .select()
       .single();
 
     if (error) throw error;
     return data;
+  },
+
+  // 공개 링크 생성/업데이트
+  async generatePublicLink(scheduleId: number): Promise<string> {
+    console.log('generatePublicLink 호출 - scheduleId:', scheduleId, 'type:', typeof scheduleId);
+    if (!scheduleId || isNaN(Number(scheduleId)) || scheduleId <= 0) {
+      throw new Error(`유효하지 않은 스케줄 ID입니다: ${scheduleId}`);
+    }
+    
+    // 공개 링크 문자열 생성 함수 호출 (이름 충돌 방지를 위해 직접 구현)
+    const publicLink = Math.random().toString(36).substring(2, 18).toUpperCase();
+    
+    const { error } = await supabase
+      .from('schedules')
+      .update({ public_link: publicLink })
+      .eq('id', scheduleId);
+
+    if (error) {
+      console.error('Supabase 업데이트 에러:', error);
+      throw error;
+    }
+    return publicLink;
+  },
+
+  // 공개 링크 삭제
+  async removePublicLink(scheduleId: number): Promise<void> {
+    const { error } = await supabase
+      .from('schedules')
+      .update({ public_link: null })
+      .eq('id', scheduleId);
+
+    if (error) throw error;
   },
 
   // 스케줄 수정
@@ -102,15 +159,41 @@ export const scheduleService = {
       .from('matches')
       .select(`
         *,
-        player1:attendances!player1_id(*),
-        player2:attendances!player2_id(*),
-        player3:attendances!player3_id(*),
-        player4:attendances!player4_id(*)
+        player1:attendances!matches_player1_id_fkey(*, member:members(*)),
+        player2:attendances!matches_player2_id_fkey(*, member:members(*)),
+        player3:attendances!matches_player3_id_fkey(*, member:members(*)),
+        player4:attendances!matches_player4_id_fkey(*, member:members(*))
       `)
       .eq('schedule_id', scheduleId)
       .order('match_number');
 
-    if (error) throw error;
+    if (error) {
+      // 외래키 관계가 제대로 설정되지 않은 경우 직접 조회
+      const { data: matchesData, error: matchesError } = await supabase
+        .from('matches')
+        .select('*')
+        .eq('schedule_id', scheduleId)
+        .order('match_number');
+
+      if (matchesError) throw matchesError;
+
+      // 참석자 정보를 별도로 조회하여 매핑
+      const { data: attendancesData } = await supabase
+        .from('attendances')
+        .select('*, member:members(*)')
+        .eq('schedule_id', scheduleId);
+
+      const attendancesMap = new Map((attendancesData || []).map(a => [a.id, a]));
+
+      return (matchesData || []).map(match => ({
+        ...match,
+        player1: match.player1_id ? attendancesMap.get(match.player1_id) : null,
+        player2: match.player2_id ? attendancesMap.get(match.player2_id) : null,
+        player3: match.player3_id ? attendancesMap.get(match.player3_id) : null,
+        player4: match.player4_id ? attendancesMap.get(match.player4_id) : null,
+      })) as Match[];
+    }
+
     return data || [];
   },
 
