@@ -57,10 +57,20 @@ export default function AdvancedScheduleSettings({
   const handleCourtCountChange = (value: string) => {
     const newCourtCount = parseInt(value, 10);
     // 코트 수가 변경되면 코트별 타입 배열도 조정
-    const newCourtTypes = settings.courtTypes 
-      ? [...settings.courtTypes.slice(0, newCourtCount)]
-      : undefined;
-    
+    let newCourtTypes = settings.courtTypes;
+
+    if (newCourtTypes) {
+      if (Array.isArray(newCourtTypes[0])) {
+        // 2D 배열인 경우
+        newCourtTypes = (newCourtTypes as ('mixed' | 'mens' | 'womens')[][]).map(
+          matchCourtTypes => matchCourtTypes.slice(0, newCourtCount)
+        );
+      } else {
+        // 1D 배열인 경우
+        newCourtTypes = (newCourtTypes as ('mixed' | 'mens' | 'womens')[]).slice(0, newCourtCount);
+      }
+    }
+
     onSettingsChange({
       ...settings,
       courtCount: newCourtCount,
@@ -68,13 +78,32 @@ export default function AdvancedScheduleSettings({
     });
   };
 
-  const handleCourtTypeChange = (index: number, value: 'mixed' | 'mens' | 'womens') => {
-    const newCourtTypes = settings.courtTypes || Array(settings.courtCount).fill('mixed');
-    newCourtTypes[index] = value;
-    onSettingsChange({
-      ...settings,
-      courtTypes: newCourtTypes,
-    });
+  const handleCourtTypeChange = (
+    matchIndex: number | undefined,
+    courtIndex: number,
+    value: 'mixed' | 'mens' | 'womens'
+  ) => {
+    if (matchIndex === undefined) {
+      // 1D 배열 모드 (모든 경기 동일)
+      const newCourtTypes = (settings.courtTypes as ('mixed' | 'mens' | 'womens')[]) ||
+        Array(settings.courtCount).fill('mixed');
+      newCourtTypes[courtIndex] = value;
+      onSettingsChange({
+        ...settings,
+        courtTypes: newCourtTypes,
+      });
+    } else {
+      // 2D 배열 모드 (경기별로 다름)
+      const newCourtTypes = (settings.courtTypes as ('mixed' | 'mens' | 'womens')[][]) ||
+        Array.from({ length: settings.totalMatches }, () =>
+          Array(settings.courtCount).fill('mixed') as ('mixed' | 'mens' | 'womens')[]
+        );
+      newCourtTypes[matchIndex][courtIndex] = value;
+      onSettingsChange({
+        ...settings,
+        courtTypes: newCourtTypes,
+      });
+    }
   };
 
   const applyCourtTypeToAll = (type: 'mixed' | 'mens' | 'womens') => {
@@ -310,27 +339,31 @@ export default function AdvancedScheduleSettings({
               </div>
               {settings.courtTypes && (
                 <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => applyCourtTypeToAll('mixed')}
-                    className="text-xs px-3 py-1 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors"
-                  >
-                    전체 혼복
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => applyCourtTypeToAll('mens')}
-                    className="text-xs px-3 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
-                  >
-                    전체 남복
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => applyCourtTypeToAll('womens')}
-                    className="text-xs px-3 py-1 bg-pink-100 text-pink-700 rounded-lg hover:bg-pink-200 transition-colors"
-                  >
-                    전체 여복
-                  </button>
+                  {!Array.isArray(settings.courtTypes[0]) && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => applyCourtTypeToAll('mixed')}
+                        className="text-xs px-3 py-1 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors"
+                      >
+                        전체 혼복
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => applyCourtTypeToAll('mens')}
+                        className="text-xs px-3 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
+                      >
+                        전체 남복
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => applyCourtTypeToAll('womens')}
+                        className="text-xs px-3 py-1 bg-pink-100 text-pink-700 rounded-lg hover:bg-pink-200 transition-colors"
+                      >
+                        전체 여복
+                      </button>
+                    </>
+                  )}
                   <button
                     type="button"
                     onClick={() => onSettingsChange({ ...settings, courtTypes: undefined })}
@@ -343,64 +376,157 @@ export default function AdvancedScheduleSettings({
             </div>
 
             {!settings.courtTypes ? (
-              <button
-                type="button"
-                onClick={() => {
-                  onSettingsChange({
-                    ...settings,
-                    courtTypes: Array(settings.courtCount).fill('mixed') as ('mixed' | 'mens' | 'womens')[],
-                  });
-                }}
-                className="w-full py-3 px-4 bg-gray-100 hover:bg-gray-200 rounded-xl border-2 border-dashed border-gray-300 text-gray-700 font-medium transition-colors"
-              >
-                + 코트별 타입 설정 활성화
-              </button>
-            ) : (
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {Array.from({ length: settings.courtCount }, (_, index) => {
-                  const courtType = settings.courtTypes![index] || 'mixed';
-                  return (
-                    <div
-                      key={index}
-                      className="bg-gray-50 rounded-xl p-4 border-2 border-gray-200 hover:border-[#D4765A] transition-colors"
-                    >
-                      <Label className="block text-sm font-medium text-gray-700 mb-2">
-                        코트 {String.fromCharCode(65 + index)} {/* A, B, C, ... */}
-                      </Label>
-                      <Select
-                        value={courtType}
-                        onValueChange={(value: 'mixed' | 'mens' | 'womens') => handleCourtTypeChange(index, value)}
-                      >
-                        <SelectTrigger className="w-full">
-                          <div className="flex items-center space-x-2">
-                            <span>{matchTypeEmojis[courtType]}</span>
-                            <SelectValue />
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    onSettingsChange({
+                      ...settings,
+                      courtTypes: Array(settings.courtCount).fill('mixed') as ('mixed' | 'mens' | 'womens')[],
+                    });
+                  }}
+                  className="w-full py-3 px-4 bg-gray-100 hover:bg-gray-200 rounded-xl border-2 border-dashed border-gray-300 text-gray-700 font-medium transition-colors"
+                >
+                  + 모든 경기에 동일하게 적용 (간편 모드)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onSettingsChange({
+                      ...settings,
+                      courtTypes: Array.from({ length: settings.totalMatches }, () =>
+                        Array(settings.courtCount).fill('mixed') as ('mixed' | 'mens' | 'womens')[]
+                      ),
+                    });
+                  }}
+                  className="w-full py-3 px-4 bg-gradient-to-r from-purple-100 to-pink-100 hover:from-purple-200 hover:to-pink-200 rounded-xl border-2 border-dashed border-purple-300 text-purple-700 font-medium transition-colors"
+                >
+                  + 경기별로 다르게 설정 (고급 모드)
+                </button>
+              </div>
+            ) : Array.isArray(settings.courtTypes[0]) ? (
+              // 2D 모드: 경기별로 다른 코트 설정
+              <div className="space-y-4">
+                <div className="bg-purple-50 rounded-lg p-3 border border-purple-200">
+                  <p className="text-sm text-purple-900 font-medium">
+                    🎯 고급 모드: 각 경기마다 코트별 타입을 개별 설정할 수 있습니다
+                  </p>
+                </div>
+                {settings.matchTypes.map((_, matchIndex) => (
+                  <div
+                    key={matchIndex}
+                    className="bg-gray-50 rounded-xl p-4 border-2 border-gray-200"
+                  >
+                    <h5 className="text-md font-bold text-gray-900 mb-3">
+                      경기 {matchIndex + 1}
+                    </h5>
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {Array.from({ length: settings.courtCount }, (_, courtIndex) => {
+                        const courtType = (settings.courtTypes as ('mixed' | 'mens' | 'womens')[][])[matchIndex]?.[courtIndex] || 'mixed';
+                        return (
+                          <div
+                            key={courtIndex}
+                            className="bg-white rounded-lg p-3 border border-gray-200 hover:border-[#D4765A] transition-colors"
+                          >
+                            <Label className="block text-xs font-medium text-gray-700 mb-2">
+                              코트 {String.fromCharCode(65 + courtIndex)}
+                            </Label>
+                            <Select
+                              value={courtType}
+                              onValueChange={(value: 'mixed' | 'mens' | 'womens') =>
+                                handleCourtTypeChange(matchIndex, courtIndex, value)
+                              }
+                            >
+                              <SelectTrigger className="w-full">
+                                <div className="flex items-center space-x-2">
+                                  <span>{matchTypeEmojis[courtType]}</span>
+                                  <SelectValue />
+                                </div>
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="mixed">
+                                  <div className="flex items-center space-x-2">
+                                    <span>👨👩</span>
+                                    <span>혼복</span>
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="mens">
+                                  <div className="flex items-center space-x-2">
+                                    <span>👨👨</span>
+                                    <span>남복</span>
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="womens">
+                                  <div className="flex items-center space-x-2">
+                                    <span>👩👩</span>
+                                    <span>여복</span>
+                                  </div>
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
                           </div>
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="mixed">
-                            <div className="flex items-center space-x-2">
-                              <span>👨👩</span>
-                              <span>혼복</span>
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="mens">
-                            <div className="flex items-center space-x-2">
-                              <span>👨👨</span>
-                              <span>남복</span>
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="womens">
-                            <div className="flex items-center space-x-2">
-                              <span>👩👩</span>
-                              <span>여복</span>
-                            </div>
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
+                        );
+                      })}
                     </div>
-                  );
-                })}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              // 1D 모드: 모든 경기에 동일한 코트 설정
+              <div className="space-y-3">
+                <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
+                  <p className="text-sm text-blue-900 font-medium">
+                    📋 간편 모드: 모든 경기에 동일한 코트 타입이 적용됩니다
+                  </p>
+                </div>
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {Array.from({ length: settings.courtCount }, (_, index) => {
+                    const courtType = (settings.courtTypes as ('mixed' | 'mens' | 'womens')[])[index] || 'mixed';
+                    return (
+                      <div
+                        key={index}
+                        className="bg-gray-50 rounded-xl p-4 border-2 border-gray-200 hover:border-[#D4765A] transition-colors"
+                      >
+                        <Label className="block text-sm font-medium text-gray-700 mb-2">
+                          코트 {String.fromCharCode(65 + index)}
+                        </Label>
+                        <Select
+                          value={courtType}
+                          onValueChange={(value: 'mixed' | 'mens' | 'womens') =>
+                            handleCourtTypeChange(undefined, index, value)
+                          }
+                        >
+                          <SelectTrigger className="w-full">
+                            <div className="flex items-center space-x-2">
+                              <span>{matchTypeEmojis[courtType]}</span>
+                              <SelectValue />
+                            </div>
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="mixed">
+                              <div className="flex items-center space-x-2">
+                                <span>👨👩</span>
+                                <span>혼복</span>
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="mens">
+                              <div className="flex items-center space-x-2">
+                                <span>👨👨</span>
+                                <span>남복</span>
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="womens">
+                              <div className="flex items-center space-x-2">
+                                <span>👩👩</span>
+                                <span>여복</span>
+                              </div>
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>

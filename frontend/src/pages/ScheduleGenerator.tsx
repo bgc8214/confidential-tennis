@@ -99,7 +99,7 @@ export default function ScheduleGenerator() {
       }
       
       // 코트별 타입 배열 생성 (선택사항)
-      let courtTypes: ('mixed' | 'mens' | 'womens')[] | undefined = undefined;
+      let courtTypes: ('mixed' | 'mens' | 'womens')[] | ('mixed' | 'mens' | 'womens')[][] | undefined = undefined;
       if (scheduleData.court_types && Array.isArray(scheduleData.court_types)) {
         courtTypes = scheduleData.court_types;
       }

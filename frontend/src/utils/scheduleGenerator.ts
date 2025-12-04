@@ -8,7 +8,7 @@ interface GenerationOptions {
   matchDuration?: number; // 경기당 시간 (분, 기본값: 30)
   courtCount?: number; // 코트 수 (기본값: 2)
   matchTypes?: ('mixed' | 'mens' | 'womens')[]; // 경기별 타입 (기본값: 모두 mixed)
-  courtTypes?: ('mixed' | 'mens' | 'womens')[]; // 코트별 타입 (선택사항, 없으면 경기 타입 사용)
+  courtTypes?: ('mixed' | 'mens' | 'womens')[] | ('mixed' | 'mens' | 'womens')[][]; // 코트별 타입: 1D(모든 경기 동일) 또는 2D(경기별로 다름)
   matchType?: 'mixed' | 'mens' | 'womens'; // 하위 호환성을 위한 단일 타입 (deprecated)
 }
 
@@ -316,14 +316,29 @@ export function generateSchedule(options: GenerationOptions): GeneratedMatch[] {
     // 각 코트별 경기 생성
     courtPlayers.forEach((players, courtIndex) => {
       if (players.length >= 4) {
-        // 코트별 타입이 있으면 사용, 없으면 경기 타입 사용
-        const courtType = courtTypes && courtTypes[courtIndex] 
-          ? courtTypes[courtIndex] 
-          : currentMatchType;
+        // 코트별 타입 결정
+        let courtType = currentMatchType; // 기본값: 경기 타입
+
+        if (courtTypes) {
+          // courtTypes가 2D 배열인지 확인 (Array.isArray로 체크)
+          if (Array.isArray(courtTypes[0])) {
+            // 2D 배열: 경기별로 다른 코트 설정
+            const courtTypesForMatch = (courtTypes as ('mixed' | 'mens' | 'womens')[][])[matchNum - 1];
+            if (courtTypesForMatch && courtTypesForMatch[courtIndex]) {
+              courtType = courtTypesForMatch[courtIndex];
+            }
+          } else {
+            // 1D 배열: 모든 경기에 동일한 코트 설정
+            const courtTypesArray = courtTypes as ('mixed' | 'mens' | 'womens')[];
+            if (courtTypesArray[courtIndex]) {
+              courtType = courtTypesArray[courtIndex];
+            }
+          }
+        }
 
         // 경기 타입에 따른 팀 구성
         const teams = formTeamsByType(players, courtType);
-        
+
         if (teams) {
           matches.push({
             match_number: matchNum,

@@ -20,7 +20,7 @@ export interface Schedule {
   end_time: string;
   match_type: 'mixed' | 'mens' | 'womens'; // 기본 매치 타입 (하위 호환성)
   match_types?: ('mixed' | 'mens' | 'womens')[]; // 경기별 타입 배열 (JSON)
-  court_types?: ('mixed' | 'mens' | 'womens')[]; // 코트별 타입 배열 (JSON, 선택사항)
+  court_types?: ('mixed' | 'mens' | 'womens')[] | ('mixed' | 'mens' | 'womens')[][]; // 코트별 타입: 1D(모든 경기 동일) 또는 2D(경기별로 다름)
   total_matches: number; // 총 경기 수 (1-10)
   match_duration: number; // 경기당 시간 (분)
   court_count: number; // 코트 수 (1-10)
@@ -91,5 +91,5 @@ export interface MatchSettings {
   matchDuration: number; // 경기당 시간 (분)
   courtCount: number; // 코트 수 (1-10)
   matchTypes: ('mixed' | 'mens' | 'womens')[]; // 경기별 타입 배열
-  courtTypes?: ('mixed' | 'mens' | 'womens')[]; // 코트별 타입 배열 (선택사항, 없으면 경기 타입 사용)
+  courtTypes?: ('mixed' | 'mens' | 'womens')[] | ('mixed' | 'mens' | 'womens')[][]; // 코트별 타입: 1D(모든 경기 동일) 또는 2D(경기별로 다름)
 }
