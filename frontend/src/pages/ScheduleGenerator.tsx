@@ -528,6 +528,70 @@ export default function ScheduleGenerator() {
         </div>
       </DndContext>
 
+      {/* Player Statistics */}
+      <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl p-4 sm:p-6 border-2 border-gray-100 animate-scale-in">
+        <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+          <span>📊</span>
+          <span>참석자별 경기 통계</span>
+        </h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {(() => {
+            // 각 참석자별 경기 통계 계산
+            const playerStats = new Map<string, { mixed: number; mens: number; womens: number }>();
+
+            matches.forEach(match => {
+              const players = [...match.team1, ...match.team2];
+              players.forEach(player => {
+                if (player) {
+                  const playerId = player.is_guest
+                    ? `guest-${player.guest_name}`
+                    : `member-${player.member_id}`;
+
+                  if (!playerStats.has(playerId)) {
+                    playerStats.set(playerId, { mixed: 0, mens: 0, womens: 0 });
+                  }
+
+                  const stats = playerStats.get(playerId)!;
+                  if (match.match_type === 'mixed') stats.mixed++;
+                  else if (match.match_type === 'mens') stats.mens++;
+                  else if (match.match_type === 'womens') stats.womens++;
+                }
+              });
+            });
+
+            // 참석자 정보와 통계 매핑
+            return attendances.map(attendance => {
+              const playerId = attendance.is_guest
+                ? `guest-${attendance.guest_name}`
+                : `member-${attendance.member_id}`;
+              const playerName = attendance.is_guest ? attendance.guest_name : attendance.member?.name;
+              const stats = playerStats.get(playerId) || { mixed: 0, mens: 0, womens: 0 };
+              const totalMatches = stats.mixed + stats.mens + stats.womens;
+
+              return (
+                <div key={playerId} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                  <div className="font-semibold text-gray-900 mb-2">{playerName || '알 수 없음'}</div>
+                  <div className="text-sm space-y-1">
+                    <div className="text-gray-600">
+                      총 <span className="font-bold text-gray-900">{totalMatches}</span>경기
+                    </div>
+                    {stats.mixed > 0 && (
+                      <div className="text-purple-600">혼복 {stats.mixed}경기</div>
+                    )}
+                    {stats.mens > 0 && (
+                      <div className="text-blue-600">남복 {stats.mens}경기</div>
+                    )}
+                    {stats.womens > 0 && (
+                      <div className="text-pink-600">여복 {stats.womens}경기</div>
+                    )}
+                  </div>
+                </div>
+              );
+            });
+          })()}
+        </div>
+      </div>
+
       {/* Action Buttons */}
       <div className="sticky bottom-4 sm:bottom-6 z-10 animate-scale-in">
         <div className="bg-white rounded-xl sm:rounded-2xl shadow-2xl border-2 border-gray-100 p-4 sm:p-6">
