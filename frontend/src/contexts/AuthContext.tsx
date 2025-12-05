@@ -90,6 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       provider: 'google',
       options: {
         redirectTo: `${window.location.origin}/confidential-tennis/auth/callback`,
+        scopes: 'email profile',
       },
     });
 
