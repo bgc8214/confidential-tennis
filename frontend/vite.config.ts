@@ -4,8 +4,8 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
-export default defineConfig({
-  base: '/confidential-tennis/',
+export default defineConfig(({ mode }) => ({
+  base: mode === 'production' ? '/confidential-tennis/' : '/',
   plugins: [
     react(),
     VitePWA({
@@ -40,4 +40,4 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-})
+}))
