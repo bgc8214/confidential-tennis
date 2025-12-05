@@ -25,15 +25,25 @@ export const adminService = {
   async getClubMembersAsAdmin(clubId: number): Promise<ClubMember[]> {
     const { data, error } = await supabase
       .from('club_members')
-      .select(`
-        *,
-        user_profile:user_profiles!club_members_user_id_fkey(*)
-      `)
+      .select('*')
       .eq('club_id', clubId)
       .order('role', { ascending: true });
 
     if (error) throw error;
-    return data || [];
+    if (!data || data.length === 0) return [];
+
+    // user_profiles를 별도로 조회하여 매핑
+    const userIds = data.map(m => m.user_id);
+    const { data: profiles } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .in('id', userIds);
+
+    // 프로필 매핑
+    return data.map(member => ({
+      ...member,
+      user_profile: profiles?.find(p => p.id === member.user_id) || null,
+    }));
   },
 
   // 현재 사용자가 슈퍼 어드민인지 확인
