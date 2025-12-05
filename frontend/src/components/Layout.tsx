@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useClub } from '../contexts/ClubContext';
+import { useIsSuperAdmin } from '../hooks/useIsSuperAdmin';
 import { Button } from './ui/button';
 import {
   DropdownMenu,
@@ -11,13 +12,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
-import { LogOut, LogIn, Users, ChevronDown } from 'lucide-react';
+import { LogOut, LogIn, Users, ChevronDown, Settings } from 'lucide-react';
 
 export default function Layout() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, signOut, loading: authLoading } = useAuth();
   const { currentClub, userClubs, setCurrentClub, loading: clubLoading } = useClub();
+  const { isSuperAdmin } = useIsSuperAdmin();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const closeMobileMenu = () => setMobileMenuOpen(false);
@@ -58,6 +60,13 @@ export default function Layout() {
                   <NavLink to="/members" active={location.pathname.startsWith('/members')}>회원</NavLink>
                   <NavLink to="/schedules" active={location.pathname.startsWith('/schedule')}>스케줄</NavLink>
                   <NavLink to="/stats" active={location.pathname.startsWith('/stats')}>통계</NavLink>
+                  <NavLink to="/club-members" active={location.pathname.startsWith('/club-members')}>클럽 멤버</NavLink>
+                  {isSuperAdmin && (
+                    <NavLink to="/admin" active={location.pathname.startsWith('/admin')} className="text-red-600">
+                      <Settings className="w-4 h-4 inline mr-1" />
+                      시스템 관리
+                    </NavLink>
+                  )}
                 </nav>
               )}
 

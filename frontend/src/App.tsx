@@ -12,6 +12,9 @@ import ScheduleDetail from './pages/ScheduleDetail';
 import MemberStats from './pages/MemberStats';
 import PublicSchedule from './pages/PublicSchedule';
 import AuthCallback from './pages/AuthCallback';
+import ClubMembers from './pages/ClubMembers';
+import AdminDashboard from './pages/AdminDashboard';
+import AdminClubMembers from './pages/AdminClubMembers';
 
 function App() {
   return (
@@ -77,6 +80,30 @@ function App() {
             element={
               <ProtectedRoute>
                 <MemberStats />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="club-members"
+            element={
+              <ProtectedRoute>
+                <ClubMembers />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="admin"
+            element={
+              <ProtectedRoute>
+                <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="admin/clubs/:clubId/members"
+            element={
+              <ProtectedRoute>
+                <AdminClubMembers />
               </ProtectedRoute>
             }
           />
