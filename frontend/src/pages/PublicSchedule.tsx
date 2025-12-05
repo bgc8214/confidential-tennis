@@ -1,11 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import html2canvas from 'html2canvas';
 import { publicScheduleService } from '../services/publicScheduleService';
 import type { Schedule, Match, Attendance, GeneratedMatch } from '../types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
-import { ArrowLeft, Calendar, Clock, Users, LogIn } from 'lucide-react';
+import { ArrowLeft, Calendar, Clock, Users, LogIn, Download } from 'lucide-react';
 import MatchCard from '../components/MatchCard';
+import CompactScheduleView from '../components/CompactScheduleView';
 
 export default function PublicSchedule() {
   const { publicLink } = useParams<{ publicLink: string }>();
@@ -15,6 +17,7 @@ export default function PublicSchedule() {
   const [attendances, setAttendances] = useState<Attendance[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const compactViewRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (publicLink) {
@@ -78,6 +81,29 @@ export default function PublicSchedule() {
       womens: { label: '여복', emoji: '👩👩' }
     };
     return typeMap[matchType] || { label: matchType, emoji: '🎾' };
+  };
+
+  const handleDownloadImage = async () => {
+    if (!compactViewRef.current || !schedule) return;
+
+    try {
+      const canvas = await html2canvas(compactViewRef.current, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        logging: false,
+        windowWidth: 1200,
+        windowHeight: 800,
+      });
+
+      const link = document.createElement('a');
+      const dateStr = new Date(schedule.date).toISOString().split('T')[0];
+      link.download = `테니스-스케줄-${dateStr}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    } catch (err) {
+      console.error('이미지 다운로드 실패:', err);
+      alert('이미지 다운로드에 실패했습니다.');
+    }
   };
 
   if (loading) {
@@ -146,6 +172,14 @@ export default function PublicSchedule() {
             <h1 className="text-4xl font-bold text-gray-900 mb-2">경기 스케줄</h1>
             <p className="text-gray-600">공개 링크로 공유된 스케줄입니다</p>
           </div>
+          <Button
+            onClick={handleDownloadImage}
+            variant="outline"
+            className="border-green-300 text-green-700 hover:bg-green-50"
+          >
+            <Download className="w-4 h-4 mr-2" />
+            이미지 저장
+          </Button>
         </div>
 
       {/* Schedule Info */}
@@ -255,6 +289,25 @@ export default function PublicSchedule() {
           </CardContent>
         </Card>
       )}
+
+      {/* 숨겨진 CompactScheduleView - 이미지 다운로드용 */}
+      <div style={{ position: 'absolute', left: '-9999px', top: 0 }} ref={compactViewRef}>
+        {schedule && matches.length > 0 && (
+          <CompactScheduleView
+            matches={matches.map(m => ({
+              match_number: m.match_number,
+              court: m.court,
+              start_time: m.start_time,
+              match_type: m.match_type,
+              team1: [m.player1, m.player2].filter((p): p is Attendance => !!p) as [Attendance, Attendance],
+              team2: [m.player3, m.player4].filter((p): p is Attendance => !!p) as [Attendance, Attendance],
+            }))}
+            date={schedule.date}
+            startTime={schedule.start_time}
+            endTime={schedule.end_time}
+          />
+        )}
+      </div>
       </div>
     </div>
   );

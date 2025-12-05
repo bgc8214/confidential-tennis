@@ -18,6 +18,7 @@ import { generateSchedule, convertMatchesToDbFormat } from '../utils/scheduleGen
 import type { Attendance, GeneratedMatch } from '../types';
 import DraggableMatchCard from '../components/DraggableMatchCard';
 import ShareButton from '../components/ShareButton';
+import CompactScheduleView from '../components/CompactScheduleView';
 
 export default function ScheduleGenerator() {
   const { scheduleId } = useParams<{ scheduleId: string }>();
@@ -30,6 +31,7 @@ export default function ScheduleGenerator() {
   const [isSaving, setIsSaving] = useState(false);
   const [publicLink, setPublicLink] = useState<string | null>(null);
   const scheduleRef = useRef<HTMLDivElement>(null);
+  const compactViewRef = useRef<HTMLDivElement>(null);
 
   // @dnd-kit 센서 설정 (React 18과 호환)
   // 모바일 터치 지원: distance를 작게 설정하여 터치 반응성 향상
@@ -194,17 +196,21 @@ export default function ScheduleGenerator() {
   };
 
   const handleDownloadImage = async () => {
-    if (!scheduleRef.current) return;
+    if (!compactViewRef.current) return;
 
     try {
-      const canvas = await html2canvas(scheduleRef.current, {
-        backgroundColor: '#f9fafb',
+      // CompactScheduleView를 이미지로 변환
+      const canvas = await html2canvas(compactViewRef.current, {
+        backgroundColor: '#ffffff',
         scale: 2,
         logging: false,
+        windowWidth: 1200,
+        windowHeight: 800,
       });
 
       const link = document.createElement('a');
-      link.download = `테니스-스케줄-${new Date().toISOString().split('T')[0]}.png`;
+      const dateStr = schedule?.date ? new Date(schedule.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+      link.download = `테니스-스케줄-${dateStr}.png`;
       link.href = canvas.toDataURL('image/png');
       link.click();
     } catch (err) {
@@ -574,6 +580,18 @@ export default function ScheduleGenerator() {
             </button>
           </div>
         </div>
+      </div>
+
+      {/* 숨겨진 CompactScheduleView - 이미지 다운로드용 */}
+      <div style={{ position: 'absolute', left: '-9999px', top: 0 }} ref={compactViewRef}>
+        {schedule && (
+          <CompactScheduleView
+            matches={matches}
+            date={schedule.date}
+            startTime={schedule.start_time}
+            endTime={schedule.end_time}
+          />
+        )}
       </div>
     </div>
   );
