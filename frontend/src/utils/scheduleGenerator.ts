@@ -263,17 +263,49 @@ export function generateSchedule(options: GenerationOptions): GeneratedMatch[] {
       return true;
     });
 
-    // 파트너 페어 우선 배정
+    // 파트너 페어 우선 배정 (경기 타입 고려)
     const assignedPairs: [Attendance, Attendance][] = [];
     partnerPairs.forEach(([member1Id, member2Id]) => {
       const member1 = availableAttendees.find(a => a.member_id === member1Id);
       const member2 = availableAttendees.find(a => a.member_id === member2Id);
 
       if (member1 && member2) {
-        assignedPairs.push([member1, member2]);
-        availableAttendees = availableAttendees.filter(
-          a => a.id !== member1.id && a.id !== member2.id
-        );
+        // 두 사람의 성별 확인
+        const gender1 = getGender(member1);
+        const gender2 = getGender(member2);
+
+        // 경기 타입에 따라 페어 적용 여부 결정
+        let canAssignPair = false;
+
+        if (currentMatchType === 'mixed') {
+          // 혼복: 남/여 페어만 가능 (게스트는 허용)
+          canAssignPair = (
+            (gender1 === 'male' && gender2 === 'female') ||
+            (gender1 === 'female' && gender2 === 'male') ||
+            gender1 === 'guest' ||
+            gender2 === 'guest'
+          );
+        } else if (currentMatchType === 'mens') {
+          // 남복: 남자끼리만 가능
+          canAssignPair = (
+            (gender1 === 'male' || gender1 === 'guest') &&
+            (gender2 === 'male' || gender2 === 'guest')
+          );
+        } else if (currentMatchType === 'womens') {
+          // 여복: 여자끼리만 가능
+          canAssignPair = (
+            (gender1 === 'female' || gender1 === 'guest') &&
+            (gender2 === 'female' || gender2 === 'guest')
+          );
+        }
+
+        // 페어 적용 가능하면 배정
+        if (canAssignPair) {
+          assignedPairs.push([member1, member2]);
+          availableAttendees = availableAttendees.filter(
+            a => a.id !== member1.id && a.id !== member2.id
+          );
+        }
       }
     });
 
