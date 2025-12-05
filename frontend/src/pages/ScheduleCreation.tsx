@@ -9,6 +9,28 @@ import GuestInput from '../components/GuestInput';
 import ConstraintPanel, { type ConstraintData } from '../components/ConstraintPanel';
 import AdvancedScheduleSettings from '../components/AdvancedScheduleSettings';
 
+// LocalStorage에서 마지막 설정 불러오기
+const loadLastSettings = (): MatchSettings => {
+  try {
+    const saved = localStorage.getItem('lastMatchSettings');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      console.log('마지막 경기 설정 불러오기:', parsed);
+      return parsed;
+    }
+  } catch (error) {
+    console.error('설정 불러오기 실패:', error);
+  }
+  // 기본값
+  return {
+    totalMatches: 6,
+    matchDuration: 30,
+    courtCount: 2,
+    matchTypes: ['mixed', 'mixed', 'mixed', 'mixed', 'mixed', 'mixed'],
+    courtTypes: undefined
+  };
+};
+
 export default function ScheduleCreation() {
   const navigate = useNavigate();
   const { currentClub } = useClub();
@@ -18,13 +40,7 @@ export default function ScheduleCreation() {
   const [date, setDate] = useState('');
   const [startTime, setStartTime] = useState('10:00');
   const [endTime, setEndTime] = useState('13:00');
-  const [matchSettings, setMatchSettings] = useState<MatchSettings>({
-    totalMatches: 6,
-    matchDuration: 30,
-    courtCount: 2,
-    matchTypes: ['mixed', 'mixed', 'mixed', 'mixed', 'mixed', 'mixed'],
-    courtTypes: undefined // 코트별 타입은 선택사항
-  });
+  const [matchSettings, setMatchSettings] = useState<MatchSettings>(loadLastSettings());
   const [generatePublicLink, setGeneratePublicLink] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -35,6 +51,11 @@ export default function ScheduleCreation() {
     partnerPairs: [],
     excludeMatches: []
   });
+
+  // 설정 변경 시 자동 저장
+  useEffect(() => {
+    localStorage.setItem('lastMatchSettings', JSON.stringify(matchSettings));
+  }, [matchSettings]);
 
   useEffect(() => {
     if (currentClub) {
