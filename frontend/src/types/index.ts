@@ -1,3 +1,25 @@
+// 사용자 프로필
+export interface UserProfile {
+  id: string; // UUID
+  email: string | null;
+  full_name: string | null;
+  avatar_url: string | null;
+  is_super_admin: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+// 클럽 멤버 (사이트 사용자 + 권한)
+export interface ClubMember {
+  id: number;
+  club_id: number;
+  user_id: string; // UUID
+  role: 'owner' | 'admin' | 'member';
+  created_at: string;
+  user_profile?: UserProfile; // 조인된 프로필 정보
+}
+
+// 테니스 회원 (명단)
 export interface Member {
   id: number;
   club_id: number;
@@ -92,4 +114,18 @@ export interface MatchSettings {
   courtCount: number; // 코트 수 (1-10)
   matchTypes: ('mixed' | 'mens' | 'womens')[]; // 경기별 타입 배열
   courtTypes?: ('mixed' | 'mens' | 'womens')[] | ('mixed' | 'mens' | 'womens')[][]; // 코트별 타입: 1D(모든 경기 동일) 또는 2D(경기별로 다름)
+}
+
+// 클럽 인터페이스
+export interface Club {
+  id: number;
+  name: string;
+  description: string | null;
+  code: string; // 초대 코드
+  logo_url: string | null;
+  owner_id: string; // UUID
+  settings: Record<string, any>;
+  created_at: string;
+  updated_at: string;
+  member_count?: number; // 집계 필드
 }

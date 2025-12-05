@@ -1,11 +1,13 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { useAuth } from './AuthContext';
 import { clubService } from '../services/clubService';
+import { clubMemberService } from '../services/clubMemberService';
 import type { Club, ClubMember } from '../services/clubService';
 
 interface ClubContextType {
   currentClub: Club | null;
   userClubs: ClubMember[];
+  currentRole: 'owner' | 'admin' | 'member' | null;
   loading: boolean;
   setCurrentClub: (club: Club | null) => void;
   refreshClubs: () => Promise<void>;
@@ -19,6 +21,7 @@ export function ClubProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [currentClub, setCurrentClub] = useState<Club | null>(null);
   const [userClubs, setUserClubs] = useState<ClubMember[]>([]);
+  const [currentRole, setCurrentRole] = useState<'owner' | 'admin' | 'member' | null>(null);
   const [loading, setLoading] = useState(true);
 
   // 사용자가 속한 클럽 목록 조회
@@ -63,6 +66,36 @@ export function ClubProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
+  // 현재 클럽이 변경되면 role 조회
+  useEffect(() => {
+    let mounted = true;
+
+    const fetchRole = async () => {
+      if (!currentClub) {
+        setCurrentRole(null);
+        return;
+      }
+
+      try {
+        const role = await clubMemberService.getCurrentUserRole(currentClub.id);
+        if (mounted) {
+          setCurrentRole(role);
+        }
+      } catch (error) {
+        console.error('권한 조회 실패:', error);
+        if (mounted) {
+          setCurrentRole(null);
+        }
+      }
+    };
+
+    fetchRole();
+
+    return () => {
+      mounted = false;
+    };
+  }, [currentClub]);
+
   // 현재 클럽 변경 시 로컬 스토리지에 저장
   const handleSetCurrentClub = (club: Club | null) => {
     setCurrentClub(club);
@@ -92,6 +125,7 @@ export function ClubProvider({ children }: { children: ReactNode }) {
       value={{
         currentClub,
         userClubs,
+        currentRole,
         loading,
         setCurrentClub: handleSetCurrentClub,
         refreshClubs,
