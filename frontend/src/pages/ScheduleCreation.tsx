@@ -136,12 +136,10 @@ export default function ScheduleCreation() {
     e.preventDefault();
 
     const totalAttendees = selectedMemberIds.length + guests.length;
-    if (totalAttendees < 8) {
-      setError('최소 8명 이상의 참석자가 필요합니다.');
-      return;
-    }
-    if (totalAttendees > 12) {
-      setError('최대 12명까지 참석 가능합니다.');
+    const minAttendees = matchSettings.courtCount * 4; // 코트당 4명
+
+    if (totalAttendees < minAttendees) {
+      setError(`최소 ${minAttendees}명 이상의 참석자가 필요합니다. (코트 ${matchSettings.courtCount}개 × 4명)`);
       return;
     }
 
@@ -273,7 +271,8 @@ export default function ScheduleCreation() {
   }
 
   const totalAttendees = selectedMemberIds.length + guests.length;
-  const isValidAttendeeCount = totalAttendees >= 8 && totalAttendees <= 12;
+  const minAttendees = matchSettings.courtCount * 4;
+  const isValidAttendeeCount = totalAttendees >= minAttendees;
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -283,7 +282,7 @@ export default function ScheduleCreation() {
           새 스케줄 만들기
         </h2>
         <p className="text-gray-600">
-          참석자를 선택하고 제약조건을 설정한 후 경기 일정을 생성합니다. (8-12명)
+          참석자를 선택하고 제약조건을 설정한 후 경기 일정을 생성합니다. (최소 {minAttendees}명)
         </p>
       </div>
 
@@ -405,7 +404,7 @@ export default function ScheduleCreation() {
             총 <span className="font-bold text-2xl">{totalAttendees}</span>명의 참석자
             {!isValidAttendeeCount && (
               <span className="ml-2">
-                (8-12명 필요)
+                (최소 {minAttendees}명 필요)
               </span>
             )}
           </p>
