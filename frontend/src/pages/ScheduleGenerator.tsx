@@ -17,12 +17,13 @@ import { scheduleService } from '../services/scheduleService';
 import { generateSchedule, convertMatchesToDbFormat } from '../utils/scheduleGenerator';
 import type { Attendance, GeneratedMatch } from '../types';
 import DraggableMatchCard from '../components/DraggableMatchCard';
-import ShareButton from '../components/ShareButton';
 import CompactScheduleView from '../components/CompactScheduleView';
+import { useClub } from '../contexts/ClubContext';
 
 export default function ScheduleGenerator() {
   const { scheduleId } = useParams<{ scheduleId: string }>();
   const navigate = useNavigate();
+  const { currentClub } = useClub();
   const [attendances, setAttendances] = useState<Attendance[]>([]);
   const [matches, setMatches] = useState<GeneratedMatch[]>([]);
   const [schedule, setSchedule] = useState<any>(null);
@@ -231,15 +232,15 @@ export default function ScheduleGenerator() {
       } else {
         matchTypes = Array(schedule?.total_matches || 6).fill(schedule?.match_type || 'mixed');
       }
-      
+
       // 코트별 타입 배열 생성 (선택사항)
       let courtTypes: ('mixed' | 'mens' | 'womens')[] | undefined = undefined;
       if (schedule?.court_types && Array.isArray(schedule.court_types)) {
         courtTypes = schedule.court_types;
       }
-      
+
       const regeneratedMatches = generateSchedule({
-        attendees,
+        attendees: attendances, // attendances 상태 사용
         constraints: constraintsData,
         startTime: schedule?.start_time || '10:00',
         totalMatches: schedule?.total_matches || 6,
@@ -421,13 +422,7 @@ export default function ScheduleGenerator() {
                 공개 링크 생성
               </button>
             )}
-            
-            {/* 공유 버튼 */}
-            <ShareButton
-              title="테니스 동아리 스케줄"
-              description={`${attendances.length}명이 참석하는 경기 스케줄`}
-              url={publicLink ? `${window.location.origin}/public/schedule/${publicLink}` : window.location.href}
-            />
+
             <button
               onClick={handleDownloadImage}
               className="px-3 py-1.5 sm:px-4 sm:py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg font-medium hover:from-blue-600 hover:to-blue-700 transition-all duration-300 shadow-lg hover:shadow-xl flex items-center space-x-2 text-xs sm:text-sm"
@@ -590,6 +585,7 @@ export default function ScheduleGenerator() {
             date={schedule.date}
             startTime={schedule.start_time}
             endTime={schedule.end_time}
+            clubName={currentClub?.name}
           />
         )}
       </div>

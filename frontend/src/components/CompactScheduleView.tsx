@@ -5,9 +5,10 @@ interface CompactScheduleViewProps {
   date: string;
   startTime: string;
   endTime: string;
+  clubName?: string;
 }
 
-export default function CompactScheduleView({ matches, date, startTime, endTime }: CompactScheduleViewProps) {
+export default function CompactScheduleView({ matches, date, startTime, endTime, clubName = '테니스 클럽' }: CompactScheduleViewProps) {
   const formatDate = (dateStr: string) => {
     const d = new Date(dateStr);
     const days = ['일', '월', '화', '수', '목', '금', '토'];
@@ -68,7 +69,7 @@ export default function CompactScheduleView({ matches, date, startTime, endTime 
           margin: '0 0 10px 0',
           color: '#1f2937'
         }}>
-          {formatDate(date)} {startTime}-{endTime}, 대회비 테니스 클럽
+          {formatDate(date)} {startTime}-{endTime}, {clubName}
         </h1>
       </div>
 
@@ -176,11 +177,10 @@ export default function CompactScheduleView({ matches, date, startTime, endTime 
                   textAlign: 'center',
                   fontSize: '14px',
                   fontWeight: 'bold',
-                  backgroundColor: courtA?.match_type === 'mixed' ? matchTypeA.color :
-                                   courtA?.match_type === 'mens' ? matchTypeA.color :
-                                   courtA?.match_type === 'womens' ? matchTypeA.color : '#f9fafb'
+                  backgroundColor: '#f9fafb'
                 }}>
-                  {courtA ? matchTypeA.label : ''}
+                  <div>{courtA ? matchTypeA.label : ''}</div>
+                  <div style={{ marginTop: '4px' }}>{courtB ? matchTypeB.label : ''}</div>
                 </td>
 
                 {/* B코트 - 팀1 */}

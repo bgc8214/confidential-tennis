@@ -42,15 +42,25 @@ const filterAttendeesByType = (
   return attendees; // mixed는 전체
 };
 
-// 혼복: 반드시 남여 vs 남여 구성
+// 혼복: 남여 vs 남여 구성 (최대한 시도)
 const formMixedTeams = (
   players: Attendance[]
 ): { team1: [Attendance, Attendance]; team2: [Attendance, Attendance] } | null => {
+  if (players.length < 4) return null;
+
   const males = players.filter(p => getGender(p) === 'male');
   const females = players.filter(p => getGender(p) === 'female');
   const guests = players.filter(p => getGender(p) === 'guest');
 
-  // 최소 남자 2명, 여자 2명 필요 (게스트는 어디든 가능)
+  console.log('formMixedTeams 입력:', {
+    총인원: players.length,
+    남자: males.length,
+    여자: females.length,
+    게스트: guests.length,
+    players: players.map(p => ({ name: p.member?.name || p.guest_name, gender: getGender(p) }))
+  });
+
+  // 이상적인 혼복: 남자 2명, 여자 2명 (게스트는 어디든 가능)
   if (males.length + guests.length >= 2 && females.length + guests.length >= 2) {
     let team1Male: Attendance | undefined;
     let team1Female: Attendance | undefined;
@@ -90,7 +100,18 @@ const formMixedTeams = (
     }
   }
 
-  return null;
+  // 혼복 구성이 불가능한 경우 (예: 남자 1명, 여자 3명)
+  // 폴백: 그냥 순서대로 배정
+  console.warn('혼복 구성 불가능, 순서대로 배정:', {
+    males: males.length,
+    females: females.length,
+    guests: guests.length
+  });
+
+  return {
+    team1: [players[0], players[1]],
+    team2: [players[2], players[3]]
+  };
 };
 
 // 남복/여복: 동성끼리만 구성
@@ -155,6 +176,10 @@ export function generateSchedule(options: GenerationOptions): GeneratedMatch[] {
   const participationCount = new Map<number, number>();
   attendees.forEach(a => participationCount.set(a.id, 0));
 
+  // KDK (Keep Different Partners) - 파트너 이력 추적
+  const partnerHistory = new Map<number, Set<number>>();
+  attendees.forEach(a => partnerHistory.set(a.id, new Set<number>()));
+
   // 제약조건 파싱
   const excludeLastMatchMemberIds = constraints
     .filter(c => c.constraint_type === 'exclude_last_match')
@@ -181,11 +206,14 @@ export function generateSchedule(options: GenerationOptions): GeneratedMatch[] {
   // 생성된 경기 목록
   const matches: GeneratedMatch[] = [];
 
-  // 경기 생성
+  // 경기 생성 (경기 번호별로 순회)
   for (let matchNum = 1; matchNum <= totalMatches; matchNum++) {
     const matchStartTime = addMinutes(startTime, (matchNum - 1) * matchDuration);
 
-    // 각 코트별로 독립적으로 경기 생성
+    // 이번 경기 회차에서 이미 배정된 참석자 추적 (같은 시간대 중복 방지)
+    const usedInThisMatch = new Set<number>();
+
+    // 각 코트별로 경기 생성
     for (let courtIdx = 0; courtIdx < courtCount; courtIdx++) {
       // 코트별 타입 결정
       let courtType: 'mixed' | 'mens' | 'womens' = finalMatchTypes[matchNum - 1] || 'mixed';
@@ -205,11 +233,16 @@ export function generateSchedule(options: GenerationOptions): GeneratedMatch[] {
       }
 
       // 코트 타입에 맞는 참석자 필터링
-      const filteredAttendees = filterAttendeesByType(attendees, courtType);
+      let filteredAttendees = filterAttendeesByType(attendees, courtType);
 
       // 이 경기에 참여 가능한 참석자 필터링
       let availableAttendees = filteredAttendees.filter(a => {
         const memberId = a.member_id;
+
+        // 이번 경기 회차에 이미 배정된 참석자 제외 (같은 시간대 중복 방지)
+        if (usedInThisMatch.has(a.id)) {
+          return false;
+        }
 
         // 마지막 경기 제외 제약
         if (matchNum === totalMatches && memberId && excludeLastMatchMemberIds.includes(memberId)) {
@@ -227,16 +260,49 @@ export function generateSchedule(options: GenerationOptions): GeneratedMatch[] {
         return true;
       });
 
-      // 참여 횟수가 적은 순으로 정렬
+      // 참석자가 부족한 경우, 경기 타입을 mixed로 폴백
+      if (availableAttendees.length < 4 && courtType !== 'mixed') {
+        console.warn(`경기 ${matchNum} 코트 ${getCourtLabel(courtIdx)} (${courtType}): 참석자 부족 (${availableAttendees.length}명) - mixed로 변경`);
+        courtType = 'mixed';
+        filteredAttendees = filterAttendeesByType(attendees, courtType);
+        availableAttendees = filteredAttendees.filter(a => {
+          const memberId = a.member_id;
+          if (usedInThisMatch.has(a.id)) {
+            return false;
+          }
+          if (matchNum === totalMatches && memberId && excludeLastMatchMemberIds.includes(memberId)) {
+            return false;
+          }
+          if (memberId && excludeMatchMap.has(memberId)) {
+            const excludedMatches = excludeMatchMap.get(memberId)!;
+            if (excludedMatches.includes(matchNum)) {
+              return false;
+            }
+          }
+          return true;
+        });
+      }
+
+      // 참여 횟수가 적은 순으로 정렬 (KDK 고려)
       availableAttendees.sort((a, b) => {
         const countA = participationCount.get(a.id) || 0;
         const countB = participationCount.get(b.id) || 0;
+
+        // 1순위: 참여 횟수가 적은 사람 우선
         if (countA !== countB) return countA - countB;
-        return Math.random() - 0.5; // 동점일 경우 랜덤
+
+        // 2순위: 파트너 이력이 적은 사람 우선 (다양한 사람과 경기)
+        const partnersA = partnerHistory.get(a.id)?.size || 0;
+        const partnersB = partnerHistory.get(b.id)?.size || 0;
+        if (partnersA !== partnersB) return partnersA - partnersB;
+
+        // 3순위: 랜덤
+        return Math.random() - 0.5;
       });
 
+      // 여전히 부족하면 경기 건너뛰기
       if (availableAttendees.length < 4) {
-        console.warn(`경기 ${matchNum} 코트 ${getCourtLabel(courtIdx)} (${courtType}): 참석자 부족 (${availableAttendees.length}명)`);
+        console.warn(`경기 ${matchNum} 코트 ${getCourtLabel(courtIdx)}: 참석자 부족 (${availableAttendees.length}명) - 경기 생성 불가`);
         continue;
       }
 
@@ -299,9 +365,45 @@ export function generateSchedule(options: GenerationOptions): GeneratedMatch[] {
         a => !usedPairMembers.has(a.member_id!)
       );
 
-      while (selectedPlayers.length < 4 && nonPairAttendees.length > 0) {
-        selectedPlayers.push(nonPairAttendees.shift()!);
+      console.log(`경기 ${matchNum} 코트 ${getCourtLabel(courtIdx)}: selectedPlayers=${selectedPlayers.length}, nonPairAttendees=${nonPairAttendees.length}`);
+
+      // 혼복인 경우, 성별 밸런스를 고려하여 선수 선택
+      if (courtType === 'mixed' && selectedPlayers.length < 4 && nonPairAttendees.length > 0) {
+        // 현재 선택된 선수들의 성별 카운트
+        const currentMales = selectedPlayers.filter(p => getGender(p) === 'male').length;
+        const currentFemales = selectedPlayers.filter(p => getGender(p) === 'female').length;
+        const needed = 4 - selectedPlayers.length;
+
+        // 이상적으로는 남자 2명, 여자 2명이어야 함
+        const neededMales = Math.max(0, 2 - currentMales);
+        const neededFemales = Math.max(0, 2 - currentFemales);
+
+        // 성별별로 분류
+        const maleAttendees = nonPairAttendees.filter(a => getGender(a) === 'male');
+        const femaleAttendees = nonPairAttendees.filter(a => getGender(a) === 'female');
+        const guestAttendees = nonPairAttendees.filter(a => getGender(a) === 'guest');
+
+        // 필요한 성별 우선 선택
+        for (let i = 0; i < neededMales && maleAttendees.length > 0; i++) {
+          selectedPlayers.push(maleAttendees.shift()!);
+        }
+        for (let i = 0; i < neededFemales && femaleAttendees.length > 0; i++) {
+          selectedPlayers.push(femaleAttendees.shift()!);
+        }
+
+        // 아직 부족하면 남은 인원 중에서 선택
+        const remaining = [...maleAttendees, ...femaleAttendees, ...guestAttendees];
+        while (selectedPlayers.length < 4 && remaining.length > 0) {
+          selectedPlayers.push(remaining.shift()!);
+        }
+      } else {
+        // 혼복이 아니거나 다른 경우, 순서대로 선택
+        while (selectedPlayers.length < 4 && nonPairAttendees.length > 0) {
+          selectedPlayers.push(nonPairAttendees.shift()!);
+        }
       }
+
+      console.log(`경기 ${matchNum} 코트 ${getCourtLabel(courtIdx)}: 최종 selectedPlayers=${selectedPlayers.length}`);
 
       // 인원이 부족하면 중복 허용
       if (selectedPlayers.length < 4) {
@@ -331,11 +433,28 @@ export function generateSchedule(options: GenerationOptions): GeneratedMatch[] {
             team2: teams.team2
           });
 
+          // 이번 경기 회차에 배정된 참석자 기록
+          selectedPlayers.forEach(p => {
+            usedInThisMatch.add(p.id);
+          });
+
           // 참여 횟수 업데이트
           selectedPlayers.forEach(p => {
             const count = participationCount.get(p.id) || 0;
             participationCount.set(p.id, count + 1);
           });
+
+          // KDK: 파트너 이력 업데이트
+          const [p1, p2] = teams.team1;
+          const [p3, p4] = teams.team2;
+
+          // team1 파트너 기록
+          partnerHistory.get(p1.id)?.add(p2.id);
+          partnerHistory.get(p2.id)?.add(p1.id);
+
+          // team2 파트너 기록
+          partnerHistory.get(p3.id)?.add(p4.id);
+          partnerHistory.get(p4.id)?.add(p3.id);
         }
       }
     }

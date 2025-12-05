@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Label } from './ui/label';
 import {
   Select,
@@ -20,11 +20,70 @@ const matchTypeEmojis = {
   womens: '👩👩',
 };
 
+interface Template {
+  name: string;
+  settings: MatchSettings;
+  createdAt: string;
+}
+
 export default function AdvancedScheduleSettings({
   settings,
   onSettingsChange,
 }: AdvancedScheduleSettingsProps) {
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [showTemplateModal, setShowTemplateModal] = useState(false);
+  const [newTemplateName, setNewTemplateName] = useState('');
+
+  // 템플릿 불러오기
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('scheduleTemplates');
+      if (saved) {
+        setTemplates(JSON.parse(saved));
+      }
+    } catch (error) {
+      console.error('템플릿 불러오기 실패:', error);
+    }
+  }, []);
+
+  // 템플릿 저장
+  const saveTemplate = () => {
+    if (!newTemplateName.trim()) {
+      alert('템플릿 이름을 입력해주세요.');
+      return;
+    }
+
+    const newTemplate: Template = {
+      name: newTemplateName.trim(),
+      settings: { ...settings },
+      createdAt: new Date().toISOString()
+    };
+
+    const updatedTemplates = [...templates, newTemplate];
+    setTemplates(updatedTemplates);
+    localStorage.setItem('scheduleTemplates', JSON.stringify(updatedTemplates));
+
+    setNewTemplateName('');
+    setShowTemplateModal(false);
+    alert(`템플릿 "${newTemplate.name}"이 저장되었습니다!`);
+  };
+
+  // 템플릿 불러오기
+  const loadTemplate = (template: Template) => {
+    onSettingsChange(template.settings);
+    alert(`템플릿 "${template.name}"을 불러왔습니다!`);
+  };
+
+  // 템플릿 삭제
+  const deleteTemplate = (templateName: string) => {
+    if (!confirm(`템플릿 "${templateName}"을 삭제하시겠습니까?`)) return;
+
+    const updatedTemplates = templates.filter(t => t.name !== templateName);
+    setTemplates(updatedTemplates);
+    localStorage.setItem('scheduleTemplates', JSON.stringify(updatedTemplates));
+    alert(`템플릿 "${templateName}"이 삭제되었습니다.`);
+  };
 
   const handleTotalMatchesChange = (value: string) => {
     const totalMatches = parseInt(value, 10);
@@ -133,6 +192,54 @@ export default function AdvancedScheduleSettings({
     return settings.totalMatches * settings.matchDuration;
   };
 
+  // 프리셋 적용 함수
+  const applyPreset = (presetName: string) => {
+    const totalMatches = settings.totalMatches;
+
+    if (presetName === 'all-mixed') {
+      // 전체 혼복
+      onSettingsChange({
+        ...settings,
+        matchTypes: Array(totalMatches).fill('mixed') as ('mixed' | 'mens' | 'womens')[],
+        courtTypes: undefined
+      });
+    } else if (presetName === 'split-from-3') {
+      // 3경기부터 남여 분리 (당신이 자주 쓰는 패턴)
+      const newCourtTypes: ('mixed' | 'mens' | 'womens')[][] = [];
+      for (let i = 0; i < totalMatches; i++) {
+        if (i < 2) {
+          // 경기 1, 2: 혼복
+          newCourtTypes.push(['mixed', 'mixed']);
+        } else {
+          // 경기 3~6: 코트 A 남복, 코트 B 여복
+          newCourtTypes.push(['mens', 'womens']);
+        }
+      }
+      onSettingsChange({
+        ...settings,
+        matchTypes: Array(totalMatches).fill('mixed') as ('mixed' | 'mens' | 'womens')[],
+        courtTypes: newCourtTypes
+      });
+    } else if (presetName === 'alternate') {
+      // 홀수 혼복, 짝수 분리
+      const newCourtTypes: ('mixed' | 'mens' | 'womens')[][] = [];
+      for (let i = 0; i < totalMatches; i++) {
+        if (i % 2 === 0) {
+          // 홀수 경기 (0, 2, 4...): 혼복
+          newCourtTypes.push(['mixed', 'mixed']);
+        } else {
+          // 짝수 경기 (1, 3, 5...): 남여 분리
+          newCourtTypes.push(['mens', 'womens']);
+        }
+      }
+      onSettingsChange({
+        ...settings,
+        matchTypes: Array(totalMatches).fill('mixed') as ('mixed' | 'mens' | 'womens')[],
+        courtTypes: newCourtTypes
+      });
+    }
+  };
+
   return (
     <div className="bg-white rounded-2xl shadow-lg p-6 space-y-4 border-2 border-gray-100">
       <div className="flex items-center justify-between">
@@ -148,6 +255,127 @@ export default function AdvancedScheduleSettings({
           {showAdvanced ? '간편 설정으로' : '고급 설정 열기'}
         </button>
       </div>
+
+      {/* 빠른 프리셋 */}
+      <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-4 border-2 border-purple-200">
+        <h4 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
+          <span>⚡</span>
+          <span>빠른 프리셋</span>
+        </h4>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => applyPreset('all-mixed')}
+            className="px-4 py-2 bg-white hover:bg-purple-50 border-2 border-purple-300 text-purple-700 rounded-lg text-sm font-medium transition-colors"
+          >
+            👨👩 전체 혼복
+          </button>
+          <button
+            type="button"
+            onClick={() => applyPreset('split-from-3')}
+            className="px-4 py-2 bg-white hover:bg-blue-50 border-2 border-blue-300 text-blue-700 rounded-lg text-sm font-medium transition-colors"
+          >
+            🎯 3경기부터 남여 분리
+          </button>
+          <button
+            type="button"
+            onClick={() => applyPreset('alternate')}
+            className="px-4 py-2 bg-white hover:bg-green-50 border-2 border-green-300 text-green-700 rounded-lg text-sm font-medium transition-colors"
+          >
+            🔄 홀수 혼복, 짝수 분리
+          </button>
+        </div>
+      </div>
+
+      {/* 템플릿 관리 */}
+      <div className="bg-gradient-to-r from-orange-50 to-yellow-50 rounded-xl p-4 border-2 border-orange-200">
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+            <span>💾</span>
+            <span>내 템플릿</span>
+          </h4>
+          <button
+            type="button"
+            onClick={() => setShowTemplateModal(true)}
+            className="px-3 py-1 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-xs font-medium transition-colors"
+          >
+            + 현재 설정 저장
+          </button>
+        </div>
+
+        {templates.length === 0 ? (
+          <p className="text-sm text-gray-500">저장된 템플릿이 없습니다.</p>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {templates.map((template) => (
+              <div
+                key={template.name}
+                className="flex items-center gap-1 px-3 py-2 bg-white border-2 border-orange-300 rounded-lg text-sm"
+              >
+                <button
+                  type="button"
+                  onClick={() => loadTemplate(template)}
+                  className="text-orange-700 hover:text-orange-900 font-medium"
+                >
+                  {template.name}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => deleteTemplate(template.name)}
+                  className="ml-1 text-red-500 hover:text-red-700"
+                  title="삭제"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* 템플릿 저장 모달 */}
+      {showTemplateModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl">
+            <h3 className="text-xl font-bold text-gray-900 mb-4">템플릿 저장</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  템플릿 이름
+                </label>
+                <input
+                  type="text"
+                  value={newTemplateName}
+                  onChange={(e) => setNewTemplateName(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && saveTemplate()}
+                  placeholder="예: 토요일 기본 패턴"
+                  className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-orange-500"
+                  autoFocus
+                />
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={saveTemplate}
+                  className="flex-1 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium transition-colors"
+                >
+                  저장
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowTemplateModal(false);
+                    setNewTemplateName('');
+                  }}
+                  className="flex-1 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-medium transition-colors"
+                >
+                  취소
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 기본 설정 */}
       <div className="grid md:grid-cols-3 gap-4">
