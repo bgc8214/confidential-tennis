@@ -86,10 +86,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signInWithGoogle = async () => {
+    // 로컬 개발 환경에서는 base path 없이, 프로덕션에서는 base path 포함
+    const basePath = import.meta.env.BASE_URL || '/';
+    const redirectPath = basePath === '/' ? '/auth/callback' : `${basePath}auth/callback`;
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/confidential-tennis/auth/callback`,
+        redirectTo: `${window.location.origin}${redirectPath}`,
         scopes: 'email profile',
       },
     });
