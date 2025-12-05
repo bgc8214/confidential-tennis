@@ -73,18 +73,32 @@ export const clubService = {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('로그인이 필요합니다.');
 
+    const upperCode = code.toUpperCase();
+    console.log('클럽 코드 조회 시도:', upperCode);
+
     // 클럽 조회
     const { data: club, error: clubError } = await supabase
       .from('clubs')
-      .select('id')
-      .eq('code', code.toUpperCase())
+      .select('id, code, name')
+      .eq('code', upperCode)
       .single();
 
+    console.log('클럽 조회 결과:', { club, error: clubError });
+
     if (clubError || !club) {
+      // 모든 클럽 코드 조회 (디버깅용)
+      const { data: allClubs } = await supabase
+        .from('clubs')
+        .select('id, code, name')
+        .limit(10);
+      console.log('데이터베이스의 클럽 코드들:', allClubs);
+
       throw new Error('유효하지 않은 클럽 코드입니다.');
     }
 
     // 클럽 가입
+    // 주의: INSERT 후 clubs 조회 시 재귀 발생 가능하므로
+    //       club 정보 없이 조회하고, 이미 조회한 club 정보를 추가
     const { data, error } = await supabase
       .from('club_members')
       .insert({
@@ -92,10 +106,7 @@ export const clubService = {
         user_id: user.id,
         role: 'member',
       })
-      .select(`
-        *,
-        club:clubs(*)
-      `)
+      .select('*')
       .single();
 
     if (error) {
@@ -103,6 +114,11 @@ export const clubService = {
         throw new Error('이미 가입된 클럽입니다.');
       }
       throw error;
+    }
+
+    // 이미 조회한 club 정보를 추가 (재귀 방지)
+    if (data) {
+      (data as any).club = club;
     }
 
     return data;
