@@ -94,10 +94,18 @@ const formMixedTeams = (
 };
 
 // 남복/여복: 동성끼리만 구성
+// 이미 필터링된 players가 들어오므로 그대로 배정
+// (남복이면 이미 남자만, 여복이면 이미 여자만 필터링되어 들어옴)
 const formSameGenderTeams = (
   players: Attendance[]
 ): { team1: [Attendance, Attendance]; team2: [Attendance, Attendance] } | null => {
   if (players.length >= 4) {
+    // 성별 확인 (디버깅용)
+    console.log('formSameGenderTeams - players:', players.map(p => ({
+      name: p.is_guest ? p.guest_name : p.member?.name,
+      gender: getGender(p)
+    })));
+
     return {
       team1: [players[0], players[1]],
       team2: [players[2], players[3]]
@@ -176,171 +184,141 @@ export function generateSchedule(options: GenerationOptions): GeneratedMatch[] {
   // 경기 생성
   for (let matchNum = 1; matchNum <= totalMatches; matchNum++) {
     const matchStartTime = addMinutes(startTime, (matchNum - 1) * matchDuration);
-    const currentMatchType = finalMatchTypes[matchNum - 1] || 'mixed';
 
-    // 현재 경기 타입에 맞는 참석자 필터링
-    const filteredAttendees = filterAttendeesByType(attendees, currentMatchType);
+    // 각 코트별로 독립적으로 경기 생성
+    for (let courtIdx = 0; courtIdx < courtCount; courtIdx++) {
+      // 코트별 타입 결정
+      let courtType: 'mixed' | 'mens' | 'womens' = finalMatchTypes[matchNum - 1] || 'mixed';
 
-    // 이 경기에 참여 가능한 참석자 필터링
-    let availableAttendees = filteredAttendees.filter(a => {
-      const memberId = a.member_id;
-
-      // 마지막 경기 제외 제약
-      if (matchNum === totalMatches && memberId && excludeLastMatchMemberIds.includes(memberId)) {
-        return false;
+      if (courtTypes) {
+        if (Array.isArray(courtTypes[0])) {
+          const courtTypesForMatch = (courtTypes as ('mixed' | 'mens' | 'womens')[][])[matchNum - 1];
+          if (courtTypesForMatch && courtTypesForMatch[courtIdx]) {
+            courtType = courtTypesForMatch[courtIdx];
+          }
+        } else {
+          const courtTypesArray = courtTypes as ('mixed' | 'mens' | 'womens')[];
+          if (courtTypesArray[courtIdx]) {
+            courtType = courtTypesArray[courtIdx];
+          }
+        }
       }
 
-      // 특정 경기 제외 제약
-      if (memberId && excludeMatchMap.has(memberId)) {
-        const excludedMatches = excludeMatchMap.get(memberId)!;
-        if (excludedMatches.includes(matchNum)) {
+      // 코트 타입에 맞는 참석자 필터링
+      const filteredAttendees = filterAttendeesByType(attendees, courtType);
+
+      // 이 경기에 참여 가능한 참석자 필터링
+      let availableAttendees = filteredAttendees.filter(a => {
+        const memberId = a.member_id;
+
+        // 마지막 경기 제외 제약
+        if (matchNum === totalMatches && memberId && excludeLastMatchMemberIds.includes(memberId)) {
           return false;
         }
-      }
 
-      return true;
-    });
-
-    // 참여 횟수가 적은 순으로 정렬
-    availableAttendees.sort((a, b) => {
-      const countA = participationCount.get(a.id) || 0;
-      const countB = participationCount.get(b.id) || 0;
-      if (countA !== countB) return countA - countB;
-      return Math.random() - 0.5; // 동점일 경우 랜덤
-    });
-
-    // 각 코트에 배정할 선수 배열 생성
-    const courtPlayers: Attendance[][] = Array.from({ length: courtCount }, () => []);
-
-    // 파트너 페어 처리
-    const usedPairMembers = new Set<number>();
-    const pairsForThisMatch: [Attendance, Attendance][] = [];
-
-    partnerPairs.forEach(([member1Id, member2Id]) => {
-      const member1 = availableAttendees.find(a => a.member_id === member1Id);
-      const member2 = availableAttendees.find(a => a.member_id === member2Id);
-
-      if (member1 && member2) {
-        const gender1 = getGender(member1);
-        const gender2 = getGender(member2);
-
-        // 경기 타입에 따라 페어 적용 가능 여부 확인
-        let canApplyPair = false;
-
-        if (currentMatchType === 'mixed') {
-          // 혼복: 남/여 페어만 가능
-          canApplyPair = (
-            (gender1 === 'male' && gender2 === 'female') ||
-            (gender1 === 'female' && gender2 === 'male') ||
-            gender1 === 'guest' ||
-            gender2 === 'guest'
-          );
-        } else if (currentMatchType === 'mens') {
-          // 남복: 남자끼리만
-          canApplyPair = (
-            (gender1 === 'male' || gender1 === 'guest') &&
-            (gender2 === 'male' || gender2 === 'guest')
-          );
-        } else if (currentMatchType === 'womens') {
-          // 여복: 여자끼리만
-          canApplyPair = (
-            (gender1 === 'female' || gender1 === 'guest') &&
-            (gender2 === 'female' || gender2 === 'guest')
-          );
-        }
-
-        // 페어가 적용 가능하고 아직 사용되지 않았으면 추가
-        if (canApplyPair && !usedPairMembers.has(member1Id) && !usedPairMembers.has(member2Id)) {
-          const count1 = participationCount.get(member1.id) || 0;
-          const count2 = participationCount.get(member2.id) || 0;
-          const avgCount = (count1 + count2) / 2;
-
-          // 평균 참여 횟수가 다른 참석자들과 비슷하면 페어 적용
-          const allCounts = availableAttendees.map(a => participationCount.get(a.id) || 0);
-          const overallAvg = allCounts.reduce((sum, c) => sum + c, 0) / allCounts.length;
-
-          // 페어의 평균 참여 횟수가 전체 평균보다 많지 않으면 적용
-          if (avgCount <= overallAvg + 0.5) {
-            pairsForThisMatch.push([member1, member2]);
-            usedPairMembers.add(member1Id);
-            usedPairMembers.add(member2Id);
+        // 특정 경기 제외 제약
+        if (memberId && excludeMatchMap.has(memberId)) {
+          const excludedMatches = excludeMatchMap.get(memberId)!;
+          if (excludedMatches.includes(matchNum)) {
+            return false;
           }
         }
-      }
-    });
 
-    // 페어가 아닌 참석자 목록
-    const nonPairAttendees = availableAttendees.filter(
-      a => !usedPairMembers.has(a.member_id!)
-    );
+        return true;
+      });
 
-    // 각 코트에 선수 배정
-    let courtIndex = 0;
-    let pairIndex = 0;
-    let nonPairIndex = 0;
+      // 참여 횟수가 적은 순으로 정렬
+      availableAttendees.sort((a, b) => {
+        const countA = participationCount.get(a.id) || 0;
+        const countB = participationCount.get(b.id) || 0;
+        if (countA !== countB) return countA - countB;
+        return Math.random() - 0.5; // 동점일 경우 랜덤
+      });
 
-    while (courtIndex < courtCount) {
-      const currentCourt = courtPlayers[courtIndex];
-
-      // 코트당 4명 필요
-      while (currentCourt.length < 4) {
-        // 먼저 페어 배정
-        if (pairIndex < pairsForThisMatch.length && currentCourt.length <= 2) {
-          const [p1, p2] = pairsForThisMatch[pairIndex];
-          currentCourt.push(p1, p2);
-          pairIndex++;
-        }
-        // 페어가 없거나 이미 배정했으면 비페어 참석자 배정
-        else if (nonPairIndex < nonPairAttendees.length) {
-          currentCourt.push(nonPairAttendees[nonPairIndex]);
-          nonPairIndex++;
-        }
-        // 더 이상 배정할 사람이 없으면 중단
-        else {
-          break;
-        }
+      if (availableAttendees.length < 4) {
+        console.warn(`경기 ${matchNum} 코트 ${getCourtLabel(courtIdx)} (${courtType}): 참석자 부족 (${availableAttendees.length}명)`);
+        continue;
       }
 
-      courtIndex++;
-    }
+      // 파트너 페어 처리
+      const usedPairMembers = new Set<number>();
+      const selectedPlayers: Attendance[] = [];
 
-    // 인원이 부족한 코트 처리 (중복 참여 허용)
-    courtPlayers.forEach((players, idx) => {
-      if (players.length < 4) {
+      // 파트너 페어 확인 및 적용
+      partnerPairs.forEach(([member1Id, member2Id]) => {
+        if (selectedPlayers.length >= 4) return;
+
+        const member1 = availableAttendees.find(a => a.member_id === member1Id);
+        const member2 = availableAttendees.find(a => a.member_id === member2Id);
+
+        if (member1 && member2 && !usedPairMembers.has(member1Id) && !usedPairMembers.has(member2Id)) {
+          const gender1 = getGender(member1);
+          const gender2 = getGender(member2);
+
+          // 코트 타입에 따라 페어 적용 가능 여부 확인
+          let canApplyPair = false;
+
+          if (courtType === 'mixed') {
+            canApplyPair = (
+              (gender1 === 'male' && gender2 === 'female') ||
+              (gender1 === 'female' && gender2 === 'male') ||
+              gender1 === 'guest' ||
+              gender2 === 'guest'
+            );
+          } else if (courtType === 'mens') {
+            canApplyPair = (
+              (gender1 === 'male' || gender1 === 'guest') &&
+              (gender2 === 'male' || gender2 === 'guest')
+            );
+          } else if (courtType === 'womens') {
+            canApplyPair = (
+              (gender1 === 'female' || gender1 === 'guest') &&
+              (gender2 === 'female' || gender2 === 'guest')
+            );
+          }
+
+          if (canApplyPair) {
+            const count1 = participationCount.get(member1.id) || 0;
+            const count2 = participationCount.get(member2.id) || 0;
+            const avgCount = (count1 + count2) / 2;
+
+            const allCounts = availableAttendees.map(a => participationCount.get(a.id) || 0);
+            const overallAvg = allCounts.reduce((sum, c) => sum + c, 0) / allCounts.length;
+
+            if (avgCount <= overallAvg + 0.5) {
+              selectedPlayers.push(member1, member2);
+              usedPairMembers.add(member1Id);
+              usedPairMembers.add(member2Id);
+            }
+          }
+        }
+      });
+
+      // 나머지 선수 배정
+      const nonPairAttendees = availableAttendees.filter(
+        a => !usedPairMembers.has(a.member_id!)
+      );
+
+      while (selectedPlayers.length < 4 && nonPairAttendees.length > 0) {
+        selectedPlayers.push(nonPairAttendees.shift()!);
+      }
+
+      // 인원이 부족하면 중복 허용
+      if (selectedPlayers.length < 4) {
         const additionalPlayers = availableAttendees
-          .filter(a => !players.some(p => p.id === a.id))
-          .slice(0, 4 - players.length);
-        players.push(...additionalPlayers);
+          .filter(a => !selectedPlayers.some(p => p.id === a.id))
+          .slice(0, 4 - selectedPlayers.length);
+        selectedPlayers.push(...additionalPlayers);
       }
-    });
 
-    // 각 코트별 경기 생성
-    courtPlayers.forEach((players, courtIdx) => {
-      if (players.length >= 4) {
-        // 코트별 타입 결정
-        let courtType = currentMatchType;
-
-        if (courtTypes) {
-          if (Array.isArray(courtTypes[0])) {
-            const courtTypesForMatch = (courtTypes as ('mixed' | 'mens' | 'womens')[][])[matchNum - 1];
-            if (courtTypesForMatch && courtTypesForMatch[courtIdx]) {
-              courtType = courtTypesForMatch[courtIdx];
-            }
-          } else {
-            const courtTypesArray = courtTypes as ('mixed' | 'mens' | 'womens')[];
-            if (courtTypesArray[courtIdx]) {
-              courtType = courtTypesArray[courtIdx];
-            }
-          }
-        }
-
-        // 경기 타입에 따른 팀 구성
+      // 팀 구성
+      if (selectedPlayers.length >= 4) {
         let teams: { team1: [Attendance, Attendance]; team2: [Attendance, Attendance] } | null = null;
 
         if (courtType === 'mixed') {
-          teams = formMixedTeams(players);
+          teams = formMixedTeams(selectedPlayers);
         } else {
-          teams = formSameGenderTeams(players);
+          teams = formSameGenderTeams(selectedPlayers);
         }
 
         if (teams) {
@@ -354,13 +332,13 @@ export function generateSchedule(options: GenerationOptions): GeneratedMatch[] {
           });
 
           // 참여 횟수 업데이트
-          players.forEach(p => {
+          selectedPlayers.forEach(p => {
             const count = participationCount.get(p.id) || 0;
             participationCount.set(p.id, count + 1);
           });
         }
       }
-    });
+    }
   }
 
   return matches;
