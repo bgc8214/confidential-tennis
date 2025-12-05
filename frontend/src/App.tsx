@@ -17,8 +17,11 @@ import AdminDashboard from './pages/AdminDashboard';
 import AdminClubMembers from './pages/AdminClubMembers';
 
 function App() {
+  // 개발 환경에서는 basename 없음, 프로덕션에서는 /confidential-tennis/
+  const basename = import.meta.env.BASE_URL === '/' ? undefined : import.meta.env.BASE_URL;
+
   return (
-    <BrowserRouter basename="/confidential-tennis">
+    <BrowserRouter basename={basename}>
       <Routes>
         {/* 공개 라우트 */}
         <Route path="/login" element={<Login />} />
