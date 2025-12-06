@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { memberService } from '../services/memberService';
 import { scheduleService } from '../services/scheduleService';
+import { attendanceService } from '../services/attendanceService';
 import { useClub } from '../contexts/ClubContext';
 import type { Member, MatchSettings } from '../types';
 import AttendeeSelector from '../components/AttendeeSelector';
@@ -33,6 +34,7 @@ const loadLastSettings = (): MatchSettings => {
 
 export default function ScheduleCreation() {
   const navigate = useNavigate();
+  const { scheduleId } = useParams<{ scheduleId: string }>();
   const { currentClub } = useClub();
   const [members, setMembers] = useState<Member[]>([]);
   const [selectedMemberIds, setSelectedMemberIds] = useState<number[]>([]);
@@ -60,14 +62,19 @@ export default function ScheduleCreation() {
   useEffect(() => {
     if (currentClub) {
       loadMembers();
-      // Set default date to next Saturday
-      setDate(getNextSaturday());
+      if (scheduleId) {
+        // 수정 모드: 기존 스케줄 데이터 로드
+        loadScheduleData(parseInt(scheduleId));
+      } else {
+        // 신규 생성 모드: 다음 토요일로 설정
+        setDate(getNextSaturday());
+      }
     }
-  }, [currentClub]);
+  }, [currentClub, scheduleId]);
 
   const loadMembers = async () => {
     if (!currentClub) return;
-    
+
     try {
       setLoading(true);
       const data = await memberService.getAll(currentClub.id);
@@ -75,6 +82,76 @@ export default function ScheduleCreation() {
       setError(null);
     } catch (err) {
       setError('회원 목록을 불러오는데 실패했습니다.');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadScheduleData = async (scheduleIdNum: number) => {
+    if (!currentClub) return;
+
+    try {
+      setLoading(true);
+
+      // 스케줄 기본 정보 로드
+      const schedule = await scheduleService.getById(scheduleIdNum);
+      setDate(schedule.date);
+      setStartTime(schedule.start_time);
+      setEndTime(schedule.end_time);
+
+      // 경기 설정 로드
+      if (schedule.match_settings) {
+        setMatchSettings(schedule.match_settings);
+      }
+
+      // 공개 링크 여부
+      setGeneratePublicLink(!!schedule.public_link);
+
+      // 참석자 로드
+      const attendancesData = await attendanceService.getByScheduleId(scheduleIdNum);
+      const memberIds: number[] = [];
+      const guestNames: string[] = [];
+
+      attendancesData.forEach(att => {
+        if (att.is_guest && att.guest_name) {
+          guestNames.push(att.guest_name);
+        } else if (att.member_id) {
+          memberIds.push(att.member_id);
+        }
+      });
+
+      setSelectedMemberIds(memberIds);
+      setGuests(guestNames);
+
+      // 제약조건 로드
+      const constraintsData = await scheduleService.getConstraints(scheduleIdNum);
+      const excludeLastMatch: number[] = [];
+      const partnerPairs: [number, number][] = [];
+      const excludeMatches: { memberId: number; matchNumbers: number[] }[] = [];
+
+      constraintsData.forEach(constraint => {
+        if (constraint.constraint_type === 'exclude_last_match' && constraint.member_id_1) {
+          excludeLastMatch.push(constraint.member_id_1);
+        } else if (constraint.constraint_type === 'partner_pair' && constraint.member_id_1 && constraint.member_id_2) {
+          partnerPairs.push([constraint.member_id_1, constraint.member_id_2]);
+        } else if (constraint.constraint_type === 'exclude_match' && constraint.member_id_1 && constraint.match_number) {
+          const existing = excludeMatches.find(em => em.memberId === constraint.member_id_1);
+          if (existing) {
+            existing.matchNumbers.push(constraint.match_number);
+          } else {
+            excludeMatches.push({
+              memberId: constraint.member_id_1,
+              matchNumbers: [constraint.match_number]
+            });
+          }
+        }
+      });
+
+      setConstraints({ excludeLastMatch, partnerPairs, excludeMatches });
+      setError(null);
+    } catch (err) {
+      setError('스케줄 데이터를 불러오는데 실패했습니다.');
       console.error(err);
     } finally {
       setLoading(false);
@@ -182,11 +259,24 @@ export default function ScheduleCreation() {
         scheduleData.court_types = matchSettings.courtTypes;
       }
 
-      const schedule = await scheduleService.create(
-        currentClub.id,
-        scheduleData,
-        generatePublicLink
-      );
+      let schedule;
+
+      if (scheduleId) {
+        // 수정 모드: 기존 스케줄 업데이트
+        schedule = await scheduleService.update(parseInt(scheduleId), scheduleData);
+
+        // 기존 데이터 삭제 (순서 중요: matches → attendances → constraints)
+        await scheduleService.deleteMatchesByScheduleId(parseInt(scheduleId));
+        await attendanceService.deleteByScheduleId(parseInt(scheduleId));
+        await scheduleService.deleteConstraintsByScheduleId(parseInt(scheduleId));
+      } else {
+        // 생성 모드: 새 스케줄 생성
+        schedule = await scheduleService.create(
+          currentClub.id,
+          scheduleData,
+          generatePublicLink
+        );
+      }
 
       // 2. 참석자 등록
       const attendanceData = [
@@ -279,7 +369,7 @@ export default function ScheduleCreation() {
       {/* Header */}
       <div className="animate-fade-in">
         <h2 className="text-4xl font-bold text-gray-900 mb-2">
-          새 스케줄 만들기
+          {scheduleId ? '스케줄 수정하기' : '새 스케줄 만들기'}
         </h2>
         <p className="text-gray-600">
           참석자를 선택하고 제약조건을 설정한 후 경기 일정을 생성합니다. (최소 {minAttendees}명)
@@ -427,14 +517,14 @@ export default function ScheduleCreation() {
                 {isSubmitting ? (
                   <>
                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                    <span>생성 중...</span>
+                    <span>{scheduleId ? '수정 중...' : '생성 중...'}</span>
                   </>
                 ) : (
                   <>
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                     </svg>
-                    <span>다음 단계: 경기 배정</span>
+                    <span>{scheduleId ? '수정 후 재생성' : '다음 단계: 경기 배정'}</span>
                   </>
                 )}
               </button>

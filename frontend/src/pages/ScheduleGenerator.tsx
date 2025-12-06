@@ -362,13 +362,6 @@ export default function ScheduleGenerator() {
 
   return (
     <div className="w-full space-y-8 py-4" ref={scheduleRef}>
-      {/* Debug Info - 개발 중에만 표시 */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-800">
-          <strong>디버그:</strong> 참석자 {attendances.length}명, 경기 {matches.length}개 생성됨
-        </div>
-      )}
-
       {/* Header */}
       <div className="animate-fade-in">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 gap-2">

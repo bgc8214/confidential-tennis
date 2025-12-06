@@ -63,6 +63,14 @@ function App() {
             }
           />
           <Route
+            path="schedule/:scheduleId/edit"
+            element={
+              <ProtectedRoute>
+                <ScheduleCreation />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="schedule/:scheduleId/generate"
             element={
               <ProtectedRoute>

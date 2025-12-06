@@ -252,5 +252,25 @@ export const scheduleService = {
       .eq('id', id);
 
     if (error) throw error;
+  },
+
+  // 스케줄별 제약조건 전체 삭제
+  async deleteConstraintsByScheduleId(scheduleId: number): Promise<void> {
+    const { error } = await supabase
+      .from('constraints')
+      .delete()
+      .eq('schedule_id', scheduleId);
+
+    if (error) throw error;
+  },
+
+  // 스케줄별 경기 전체 삭제
+  async deleteMatchesByScheduleId(scheduleId: number): Promise<void> {
+    const { error } = await supabase
+      .from('matches')
+      .delete()
+      .eq('schedule_id', scheduleId);
+
+    if (error) throw error;
   }
 };

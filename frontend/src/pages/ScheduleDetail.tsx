@@ -237,9 +237,9 @@ export default function ScheduleDetail() {
             이미지 저장
           </Button>
 
-          {/* 수정 버튼 (경기 생성 페이지로 이동) */}
+          {/* 수정 버튼 (참석자/제약조건 수정 페이지로 이동) */}
           <Button
-            onClick={() => navigate(`/schedule/${scheduleId}/generate`)}
+            onClick={() => navigate(`/schedule/${scheduleId}/edit`)}
             variant="outline"
             size="sm"
             className="border-blue-300 text-blue-700 hover:bg-blue-50"

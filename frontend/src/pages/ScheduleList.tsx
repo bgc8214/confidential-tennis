@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { scheduleService } from '../services/scheduleService';
 import { useClub } from '../contexts/ClubContext';
+import { updateExpiredSchedules, updatePastSchedules } from '../utils/scheduleStatusUpdater';
 import type { Schedule } from '../types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -30,6 +31,11 @@ export default function ScheduleList() {
 
     try {
       setLoading(true);
+
+      // 스케줄 상태 자동 업데이트 (백그라운드)
+      updateExpiredSchedules(currentClub.id).catch(console.error);
+      updatePastSchedules(currentClub.id).catch(console.error);
+
       const data = await scheduleService.getByMonth(currentClub.id, selectedYear, selectedMonth);
       setSchedules(data);
       setError(null);
