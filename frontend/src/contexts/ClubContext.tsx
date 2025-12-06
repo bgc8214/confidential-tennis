@@ -13,6 +13,9 @@ interface ClubContextType {
   refreshClubs: () => Promise<void>;
   createClub: (name: string, description?: string) => Promise<Club>;
   joinClub: (code: string) => Promise<void>;
+  updateClub: (id: number, updates: Partial<Club>) => Promise<Club>;
+  deleteClub: (id: number) => Promise<void>;
+  leaveClub: (clubId: number) => Promise<void>;
 }
 
 const ClubContext = createContext<ClubContextType | undefined>(undefined);
@@ -120,6 +123,37 @@ export function ClubProvider({ children }: { children: ReactNode }) {
     await refreshClubs();
   };
 
+  // 클럽 수정
+  const updateClub = async (id: number, updates: Partial<Club>): Promise<Club> => {
+    const updatedClub = await clubService.update(id, updates);
+    await refreshClubs();
+    // 현재 선택된 클럽이 수정된 클럽이면 업데이트
+    if (currentClub?.id === id) {
+      handleSetCurrentClub(updatedClub);
+    }
+    return updatedClub;
+  };
+
+  // 클럽 삭제 (소유자만)
+  const deleteClub = async (id: number): Promise<void> => {
+    await clubService.delete(id);
+    // 현재 선택된 클럽이 삭제된 클럽이면 초기화
+    if (currentClub?.id === id) {
+      handleSetCurrentClub(null);
+    }
+    await refreshClubs();
+  };
+
+  // 클럽 탈퇴
+  const leaveClub = async (clubId: number): Promise<void> => {
+    await clubMemberService.leave(clubId);
+    // 현재 선택된 클럽에서 탈퇴하면 초기화
+    if (currentClub?.id === clubId) {
+      handleSetCurrentClub(null);
+    }
+    await refreshClubs();
+  };
+
   return (
     <ClubContext.Provider
       value={{
@@ -131,6 +165,9 @@ export function ClubProvider({ children }: { children: ReactNode }) {
         refreshClubs,
         createClub,
         joinClub,
+        updateClub,
+        deleteClub,
+        leaveClub,
       }}
     >
       {children}

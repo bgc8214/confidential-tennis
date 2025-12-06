@@ -97,4 +97,18 @@ export const clubMemberService = {
     if (error) return null;
     return data?.role || null;
   },
+
+  // 클럽 탈퇴 (현재 사용자)
+  async leave(clubId: number): Promise<void> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('로그인이 필요합니다.');
+
+    const { error } = await supabase
+      .from('club_members')
+      .delete()
+      .eq('club_id', clubId)
+      .eq('user_id', user.id);
+
+    if (error) throw error;
+  },
 };
