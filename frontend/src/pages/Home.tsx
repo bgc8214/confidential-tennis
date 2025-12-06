@@ -6,6 +6,7 @@ import { Calendar, Users, BarChart3, ArrowRight, LogIn, Plus, Clock, CheckCircle
 import { useAuth } from '../contexts/AuthContext';
 import { useClub } from '../contexts/ClubContext';
 import { scheduleService } from '../services/scheduleService';
+import { updateExpiredSchedules, updatePastSchedules } from '../utils/scheduleStatusUpdater';
 import type { Schedule } from '../types';
 
 export default function Home() {
@@ -29,6 +30,11 @@ export default function Home() {
 
     try {
       setLoading(true);
+
+      // 스케줄 상태 자동 업데이트 (백그라운드)
+      updateExpiredSchedules(currentClub.id).catch(console.error);
+      updatePastSchedules(currentClub.id).catch(console.error);
+
       const now = new Date();
       const data = await scheduleService.getByMonth(currentClub.id, now.getFullYear(), now.getMonth() + 1);
       // 최근 3개만 표시
