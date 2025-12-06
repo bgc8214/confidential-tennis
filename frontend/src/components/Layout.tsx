@@ -47,7 +47,7 @@ export default function Layout() {
                 <span className="text-xl sm:text-2xl">🎾</span>
               </div>
               <div>
-                <h1 className="text-lg sm:text-xl font-bold text-gray-900">TennisMate</h1>
+                <h1 className="text-lg sm:text-xl font-bold text-gray-900">CourtPlanner</h1>
                 <p className="text-xs text-gray-500 hidden sm:block">스케줄 매니저</p>
               </div>
             </Link>
@@ -292,7 +292,7 @@ export default function Layout() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
           <div className="flex flex-col items-center gap-4">
             <div className="text-center">
-              <p className="font-semibold text-lg">TennisMate</p>
+              <p className="font-semibold text-lg">CourtPlanner</p>
               <p className="text-sm text-white/80 mt-1">스마트한 테니스 스케줄 관리</p>
             </div>
             {currentClub && (
@@ -303,7 +303,7 @@ export default function Layout() {
             )}
           </div>
           <div className="mt-6 pt-6 border-t border-white/20 text-center text-sm text-white/70">
-            © 2024 TennisMate. Powered by Supabase & React.
+            © 2024 CourtPlanner. Powered by Supabase & React.
           </div>
         </div>
       </footer>
