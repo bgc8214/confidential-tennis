@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import html2canvas from 'html2canvas';
 import { scheduleService } from '../services/scheduleService';
+import { updateExpiredSchedules, updatePastSchedules } from '../utils/scheduleStatusUpdater';
 import type { Schedule, Match, Attendance, GeneratedMatch } from '../types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,15 +23,21 @@ export default function ScheduleDetail() {
   const compactViewRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (scheduleId) {
+    if (scheduleId && currentClub) {
       loadScheduleDetail();
     }
-  }, [scheduleId]);
+  }, [scheduleId, currentClub]);
 
   const loadScheduleDetail = async () => {
+    if (!currentClub) return;
+
     try {
       setLoading(true);
       const id = parseInt(scheduleId!);
+
+      // 스케줄 상태 자동 업데이트 (백그라운드)
+      updateExpiredSchedules(currentClub.id).catch(console.error);
+      updatePastSchedules(currentClub.id).catch(console.error);
 
       // 스케줄 정보, 경기 목록, 참석자 목록을 병렬로 로드
       const [scheduleData, matchesData, attendancesData] = await Promise.all([
@@ -298,7 +305,35 @@ export default function ScheduleDetail() {
 
       {/* Matches List */}
       <div className="space-y-8">
-        {matchesByNumber.map(({ matchNumber, courtA, courtB }, idx) => (
+        {matches.length === 0 ? (
+          <Card className="border-2 border-yellow-200 bg-yellow-50">
+            <CardContent className="p-8 text-center">
+              <div className="text-6xl mb-4">⚠️</div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">경기가 아직 생성되지 않았습니다</h3>
+              <p className="text-gray-600 mb-6">
+                스케줄은 생성되었지만 경기 배정이 완료되지 않았습니다.<br />
+                경기를 생성하거나 기존 스케줄을 수정해주세요.
+              </p>
+              <div className="flex gap-3 justify-center">
+                <Button
+                  onClick={() => navigate(`/schedule/${scheduleId}/generate`)}
+                  className="bg-gradient-to-r from-[#D4765A] to-[#2E7D4E] text-white hover:shadow-lg"
+                >
+                  <Edit className="w-4 h-4 mr-2" />
+                  경기 생성하기
+                </Button>
+                <Button
+                  onClick={() => navigate('/schedules')}
+                  variant="outline"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  목록으로
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          matchesByNumber.map(({ matchNumber, courtA, courtB }, idx) => (
           <Card
             key={matchNumber}
             className="border-2 hover:border-[#D4765A]/20 transition-all"
@@ -440,7 +475,7 @@ export default function ScheduleDetail() {
               </div>
             </CardContent>
           </Card>
-        ))}
+        )))}
       </div>
 
       {/* 숨겨진 CompactScheduleView - 이미지 다운로드용 */}
