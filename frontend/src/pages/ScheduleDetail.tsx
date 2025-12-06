@@ -6,12 +6,13 @@ import type { Schedule, Match, Attendance, GeneratedMatch } from '../types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Link as LinkIcon, Edit, Trash2, Download } from 'lucide-react';
-import ShareButton from '../components/ShareButton';
 import CompactScheduleView from '../components/CompactScheduleView';
+import { useClub } from '../contexts/ClubContext';
 
 export default function ScheduleDetail() {
   const { scheduleId } = useParams<{ scheduleId: string }>();
   const navigate = useNavigate();
+  const { currentClub } = useClub();
   const [schedule, setSchedule] = useState<Schedule | null>(null);
   const [matches, setMatches] = useState<Match[]>([]);
   const [attendances, setAttendances] = useState<Attendance[]>([]);
@@ -146,9 +147,9 @@ export default function ScheduleDetail() {
   }));
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8">
+    <div className="max-w-7xl mx-auto space-y-8 px-4 sm:px-0">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="space-y-4">
         <div>
           <Button
             onClick={() => navigate('/schedules')}
@@ -158,14 +159,14 @@ export default function ScheduleDetail() {
             <ArrowLeft className="w-4 h-4 mr-2" />
             기록 목록으로
           </Button>
-          <h2 className="text-4xl font-bold text-gray-900 mb-2">
+          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
             {formatDate(schedule.date)}
           </h2>
           <p className="text-gray-600">
             {schedule.start_time} - {schedule.end_time}
           </p>
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex flex-wrap items-center gap-2">
           <span className={`px-4 py-2 rounded-xl font-medium text-sm ${
             schedule.status === 'completed' ? 'bg-green-100 text-green-700' :
             schedule.status === 'in_progress' ? 'bg-blue-100 text-blue-700' :
@@ -224,13 +225,6 @@ export default function ScheduleDetail() {
               공개 링크 생성
             </Button>
           )}
-          
-          {/* 공유 버튼 */}
-          <ShareButton
-            title="테니스 동아리 스케줄"
-            description={`${attendances.length}명이 참석하는 경기 스케줄`}
-            url={publicLink ? `${window.location.origin}/public/schedule/${publicLink}` : window.location.href}
-          />
 
           {/* 이미지 다운로드 버튼 */}
           <Button
@@ -464,6 +458,7 @@ export default function ScheduleDetail() {
             date={schedule.date}
             startTime={schedule.start_time}
             endTime={schedule.end_time}
+            clubName={currentClub?.name}
           />
         )}
       </div>
