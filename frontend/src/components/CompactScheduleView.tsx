@@ -83,39 +83,32 @@ export default function CompactScheduleView({ matches, date, startTime, endTime,
           <tr>
             <th style={{
               border: '2px solid #1f2937',
-              padding: '12px',
+              padding: '14px',
               backgroundColor: '#f9fafb',
-              fontSize: '18px',
+              fontSize: '20px',
               fontWeight: 'bold',
-              width: '80px'
+              width: '80px',
+              textAlign: 'center'
             }}>
               세트
             </th>
             <th style={{
               border: '2px solid #1f2937',
-              padding: '12px',
+              padding: '14px',
               backgroundColor: '#fff4e6',
-              fontSize: '18px',
-              fontWeight: 'bold'
+              fontSize: '20px',
+              fontWeight: 'bold',
+              textAlign: 'center'
             }} colSpan={2}>
               A코트 (대기실 쪽)
             </th>
             <th style={{
               border: '2px solid #1f2937',
-              padding: '12px',
-              backgroundColor: '#f9fafb',
-              fontSize: '16px',
-              fontWeight: 'bold',
-              width: '100px'
-            }}>
-              혼복
-            </th>
-            <th style={{
-              border: '2px solid #1f2937',
-              padding: '12px',
+              padding: '14px',
               backgroundColor: '#e0f2fe',
-              fontSize: '18px',
-              fontWeight: 'bold'
+              fontSize: '20px',
+              fontWeight: 'bold',
+              textAlign: 'center'
             }} colSpan={2}>
               B코트 (서대문 쪽)
             </th>
@@ -131,9 +124,9 @@ export default function CompactScheduleView({ matches, date, startTime, endTime,
                 {/* 세트 번호 */}
                 <td style={{
                   border: '2px solid #1f2937',
-                  padding: '16px 12px',
+                  padding: '20px 12px',
                   textAlign: 'center',
-                  fontSize: '24px',
+                  fontSize: '28px',
                   fontWeight: 'bold',
                   backgroundColor: '#f9fafb'
                 }}>
@@ -143,13 +136,17 @@ export default function CompactScheduleView({ matches, date, startTime, endTime,
                 {/* A코트 - 팀1 */}
                 <td style={{
                   border: '2px solid #1f2937',
-                  padding: '12px',
+                  padding: '16px',
                   backgroundColor: matchTypeA.color,
-                  fontSize: '16px',
-                  fontWeight: '600'
+                  fontSize: '18px',
+                  fontWeight: '600',
+                  textAlign: 'center'
                 }}>
                   {courtA ? (
                     <>
+                      <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#6b7280', marginBottom: '8px' }}>
+                        {matchTypeA.label}
+                      </div>
                       <div>{getPlayerName(courtA.team1[0])}, {getPlayerName(courtA.team1[1])}</div>
                     </>
                   ) : '미배정'}
@@ -158,41 +155,36 @@ export default function CompactScheduleView({ matches, date, startTime, endTime,
                 {/* A코트 - 팀2 */}
                 <td style={{
                   border: '2px solid #1f2937',
-                  padding: '12px',
+                  padding: '16px',
                   backgroundColor: matchTypeA.color,
-                  fontSize: '16px',
-                  fontWeight: '600'
+                  fontSize: '18px',
+                  fontWeight: '600',
+                  textAlign: 'center'
                 }}>
                   {courtA ? (
                     <>
+                      <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#6b7280', marginBottom: '8px' }}>
+                        {matchTypeA.label}
+                      </div>
                       <div>{getPlayerName(courtA.team2[0])}, {getPlayerName(courtA.team2[1])}</div>
                     </>
                   ) : '미배정'}
                 </td>
 
-                {/* 혼복/남복/여복 표시 */}
-                <td style={{
-                  border: '2px solid #1f2937',
-                  padding: '12px',
-                  textAlign: 'center',
-                  fontSize: '14px',
-                  fontWeight: 'bold',
-                  backgroundColor: '#f9fafb'
-                }}>
-                  <div>{courtA ? matchTypeA.label : ''}</div>
-                  <div style={{ marginTop: '4px' }}>{courtB ? matchTypeB.label : ''}</div>
-                </td>
-
                 {/* B코트 - 팀1 */}
                 <td style={{
                   border: '2px solid #1f2937',
-                  padding: '12px',
+                  padding: '16px',
                   backgroundColor: matchTypeB.color,
-                  fontSize: '16px',
-                  fontWeight: '600'
+                  fontSize: '18px',
+                  fontWeight: '600',
+                  textAlign: 'center'
                 }}>
                   {courtB ? (
                     <>
+                      <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#6b7280', marginBottom: '8px' }}>
+                        {matchTypeB.label}
+                      </div>
                       <div>{getPlayerName(courtB.team1[0])}, {getPlayerName(courtB.team1[1])}</div>
                     </>
                   ) : '미배정'}
@@ -201,13 +193,17 @@ export default function CompactScheduleView({ matches, date, startTime, endTime,
                 {/* B코트 - 팀2 */}
                 <td style={{
                   border: '2px solid #1f2937',
-                  padding: '12px',
+                  padding: '16px',
                   backgroundColor: matchTypeB.color,
-                  fontSize: '16px',
-                  fontWeight: '600'
+                  fontSize: '18px',
+                  fontWeight: '600',
+                  textAlign: 'center'
                 }}>
                   {courtB ? (
                     <>
+                      <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#6b7280', marginBottom: '8px' }}>
+                        {matchTypeB.label}
+                      </div>
                       <div>{getPlayerName(courtB.team2[0])}, {getPlayerName(courtB.team2[1])}</div>
                     </>
                   ) : '미배정'}
@@ -217,31 +213,6 @@ export default function CompactScheduleView({ matches, date, startTime, endTime,
           })}
         </tbody>
       </table>
-
-      {/* 하단 공지사항 */}
-      <div style={{
-        marginTop: '30px',
-        padding: '20px',
-        backgroundColor: '#fef3c7',
-        border: '2px solid #f59e0b',
-        borderRadius: '8px'
-      }}>
-        <p style={{
-          fontSize: '18px',
-          fontWeight: 'bold',
-          margin: '0',
-          color: '#92400e'
-        }}>
-          *공지사항
-        </p>
-        <p style={{
-          fontSize: '16px',
-          margin: '10px 0 0 0',
-          color: '#92400e'
-        }}>
-          1. 지각하지 맙시다!!
-        </p>
-      </div>
     </div>
   );
 }
