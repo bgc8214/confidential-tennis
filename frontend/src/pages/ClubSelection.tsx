@@ -7,14 +7,16 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
-import { Plus, Users, Copy, Check } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '../components/ui/dropdown-menu';
+import { Plus, Users, Copy, Check, MoreVertical, Edit, Trash2, LogOut } from 'lucide-react';
 
 export default function ClubSelection() {
   const navigate = useNavigate();
-  const { userClubs, currentClub, setCurrentClub, createClub, joinClub, loading } = useClub();
+  const { userClubs, currentClub, setCurrentClub, createClub, joinClub, updateClub, deleteClub, leaveClub, loading } = useClub();
   const { user } = useAuth();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showJoinDialog, setShowJoinDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   const [clubName, setClubName] = useState('');
   const [clubDescription, setClubDescription] = useState('');
   const [clubCode, setClubCode] = useState('');
@@ -22,6 +24,7 @@ export default function ClubSelection() {
   const [creating, setCreating] = useState(false);
   const [joining, setJoining] = useState(false);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const [editingClub, setEditingClub] = useState<any>(null);
 
   const handleCreateClub = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,6 +70,62 @@ export default function ClubSelection() {
     navigator.clipboard.writeText(code);
     setCopiedCode(code);
     setTimeout(() => setCopiedCode(null), 2000);
+  };
+
+  const handleEditClub = (club: any) => {
+    setEditingClub(club);
+    setClubName(club.name);
+    setClubDescription(club.description || '');
+    setShowEditDialog(true);
+  };
+
+  const handleUpdateClub = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingClub) return;
+
+    setError(null);
+    setCreating(true);
+
+    try {
+      await updateClub(editingClub.id, {
+        name: clubName,
+        description: clubDescription || null,
+      });
+      setShowEditDialog(false);
+      setEditingClub(null);
+      setClubName('');
+      setClubDescription('');
+    } catch (err: any) {
+      setError(err.message || '클럽 수정에 실패했습니다.');
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const handleDeleteClub = async (club: any) => {
+    if (!confirm(`정말로 "${club.name}" 클럽을 삭제하시겠습니까?\n\n모든 회원, 스케줄, 경기 데이터가 삭제됩니다.`)) {
+      return;
+    }
+
+    try {
+      await deleteClub(club.id);
+      alert('클럽이 삭제되었습니다.');
+    } catch (err: any) {
+      alert(err.message || '클럽 삭제에 실패했습니다.');
+    }
+  };
+
+  const handleLeaveClub = async (club: any) => {
+    if (!confirm(`정말로 "${club.name}" 클럽에서 탈퇴하시겠습니까?`)) {
+      return;
+    }
+
+    try {
+      await leaveClub(club.id);
+      alert('클럽에서 탈퇴했습니다.');
+    } catch (err: any) {
+      alert(err.message || '클럽 탈퇴에 실패했습니다.');
+    }
   };
 
   if (loading) {
@@ -136,7 +195,7 @@ export default function ClubSelection() {
                       onClick={() => handleSelectClub(club)}
                     >
                       <div className="flex items-start justify-between mb-2">
-                        <div>
+                        <div className="flex-1">
                           <h3 className="font-bold text-lg text-gray-900">
                             {club.name}
                             {isCurrent && (
@@ -147,9 +206,48 @@ export default function ClubSelection() {
                             <p className="text-sm text-gray-600 mt-1">{club.description}</p>
                           )}
                         </div>
-                        <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded-lg text-xs font-medium">
-                          {roleLabels[clubMember.role]}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded-lg text-xs font-medium">
+                            {roleLabels[clubMember.role]}
+                          </span>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button
+                                onClick={(e) => e.stopPropagation()}
+                                className="p-1 hover:bg-gray-200 rounded-lg transition-colors"
+                              >
+                                <MoreVertical className="w-4 h-4 text-gray-600" />
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                              {clubMember.role === 'owner' && (
+                                <>
+                                  <DropdownMenuItem onClick={() => handleEditClub(club)}>
+                                    <Edit className="w-4 h-4 mr-2" />
+                                    클럽 수정
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    onClick={() => handleDeleteClub(club)}
+                                    className="text-red-600 focus:text-red-600"
+                                  >
+                                    <Trash2 className="w-4 h-4 mr-2" />
+                                    클럽 삭제
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+                              {clubMember.role !== 'owner' && (
+                                <DropdownMenuItem
+                                  onClick={() => handleLeaveClub(club)}
+                                  className="text-red-600 focus:text-red-600"
+                                >
+                                  <LogOut className="w-4 h-4 mr-2" />
+                                  클럽 탈퇴
+                                </DropdownMenuItem>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                       </div>
                       <div className="flex items-center justify-between mt-3">
                         <span className="text-xs text-gray-500">코드: {club.code}</span>
@@ -300,6 +398,63 @@ export default function ClubSelection() {
             </DialogContent>
           </Dialog>
         </div>
+
+        {/* 클럽 수정 다이얼로그 */}
+        <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>클럽 수정</DialogTitle>
+              <DialogDescription>
+                클럽 정보를 수정합니다.
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleUpdateClub} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="editClubName">클럽 이름 *</Label>
+                <Input
+                  id="editClubName"
+                  value={clubName}
+                  onChange={(e) => setClubName(e.target.value)}
+                  required
+                  placeholder="서울 테니스 클럽"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="editClubDescription">설명 (선택)</Label>
+                <Input
+                  id="editClubDescription"
+                  value={clubDescription}
+                  onChange={(e) => setClubDescription(e.target.value)}
+                  placeholder="클럽에 대한 간단한 설명"
+                />
+              </div>
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg text-sm">
+                  {error}
+                </div>
+              )}
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setShowEditDialog(false);
+                    setError(null);
+                    setEditingClub(null);
+                    setClubName('');
+                    setClubDescription('');
+                  }}
+                  className="flex-1"
+                >
+                  취소
+                </Button>
+                <Button type="submit" disabled={creating} className="flex-1">
+                  {creating ? '수정 중...' : '수정하기'}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
