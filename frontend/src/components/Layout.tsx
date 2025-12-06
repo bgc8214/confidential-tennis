@@ -157,6 +157,56 @@ export default function Layout() {
           {/* Mobile Navigation */}
           {mobileMenuOpen && (
             <nav className="md:hidden mt-4 pb-4 border-t pt-4 space-y-2 animate-fade-in">
+              {/* 모바일 클럽 선택 */}
+              {isLoggedIn && !authLoading && !clubLoading && (
+                <div className="mb-4 px-4 py-3 bg-gray-50 rounded-xl">
+                  <div className="text-xs text-gray-500 mb-2">현재 클럽</div>
+                  <div className="font-semibold text-gray-900 mb-3">
+                    {currentClub?.name || '클럽을 선택해주세요'}
+                  </div>
+                  {userClubs.length > 0 && (
+                    <div className="space-y-1">
+                      <div className="text-xs text-gray-500 mb-1">클럽 전환</div>
+                      {userClubs.map((clubMember) => {
+                        const club = clubMember.club;
+                        if (!club) return null;
+                        const isCurrent = currentClub?.id === club.id;
+                        return (
+                          <button
+                            key={club.id}
+                            onClick={() => {
+                              setCurrentClub(club);
+                              closeMobileMenu();
+                              navigate('/');
+                            }}
+                            className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all ${
+                              isCurrent
+                                ? 'bg-[#2E7D4E] text-white font-semibold'
+                                : 'bg-white text-gray-700 hover:bg-gray-100'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span>{club.name}</span>
+                              {isCurrent && <span className="text-xs">✓</span>}
+                            </div>
+                          </button>
+                        );
+                      })}
+                      <button
+                        onClick={() => {
+                          navigate('/clubs');
+                          closeMobileMenu();
+                        }}
+                        className="w-full text-left px-3 py-2 rounded-lg text-sm bg-white text-gray-700 hover:bg-gray-100 mt-2"
+                      >
+                        <Users className="w-4 h-4 inline mr-2" />
+                        클럽 관리
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
               <MobileNavLink
                 to="/"
                 active={location.pathname === '/'}
@@ -187,6 +237,31 @@ export default function Layout() {
                   >
                     📊 통계
                   </MobileNavLink>
+                  <MobileNavLink
+                    to="/club-members"
+                    active={location.pathname.startsWith('/club-members')}
+                    onClick={closeMobileMenu}
+                  >
+                    👥 클럽 멤버
+                  </MobileNavLink>
+                  {isSuperAdmin && (
+                    <MobileNavLink
+                      to="/admin"
+                      active={location.pathname.startsWith('/admin')}
+                      onClick={closeMobileMenu}
+                    >
+                      ⚙️ 시스템 관리
+                    </MobileNavLink>
+                  )}
+                  <button
+                    onClick={() => {
+                      handleSignOut();
+                      closeMobileMenu();
+                    }}
+                    className="w-full text-left px-4 py-3 rounded-xl font-medium transition-all bg-red-50 text-red-600 hover:bg-red-100"
+                  >
+                    🚪 로그아웃
+                  </button>
                 </>
               )}
               {!isLoggedIn && (
