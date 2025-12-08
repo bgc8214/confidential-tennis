@@ -4,14 +4,28 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/confidential-tennis/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <meta name="description" content="테니스 동아리 스케줄 관리 시스템" />
+    <meta name="description" content="코트플래너 - 스마트한 테니스 스케줄 관리 시스템" />
     <meta name="theme-color" content="#2E7D4E" />
     <link rel="manifest" href="/confidential-tennis/manifest.json" />
-    <title>테니스 동아리 스케줄 관리</title>
+    <title>코트플래너 - 테니스 스케줄 관리</title>
     <!-- 카카오톡 SDK -->
     <script src="https://developers.kakao.com/sdk/js/kakao.js"></script>
-    <script type="module" crossorigin src="/confidential-tennis/assets/index-DaORERZM.js"></script>
-    <link rel="stylesheet" crossorigin href="/confidential-tennis/assets/index-CKMHKFJK.css">
+    <!-- GitHub Pages SPA 리다이렉트 솔루션 -->
+    <script>
+      // 404.html에서 리다이렉트된 경로를 복원
+      (function(l) {
+        if (l.search[1] === '/' ) {
+          var decoded = l.search.slice(1).split('&').map(function(s) {
+            return s.replace(/~and~/g, '&')
+          }).join('?');
+          window.history.replaceState(null, null,
+            l.pathname.slice(0, -1) + decoded + l.hash
+          );
+        }
+      }(window.location))
+    </script>
+    <script type="module" crossorigin src="/confidential-tennis/assets/index-D5WqyyA3.js"></script>
+    <link rel="stylesheet" crossorigin href="/confidential-tennis/assets/index-BfDHj8px.css">
   <link rel="manifest" href="/confidential-tennis/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/confidential-tennis/registerSW.js"></script></head>
   <body>
     <div id="root"></div>
