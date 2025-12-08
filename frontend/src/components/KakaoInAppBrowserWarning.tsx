@@ -30,6 +30,19 @@ export function isInAppBrowser(): boolean {
 function openInExternalBrowser() {
   const currentUrl = window.location.href;
 
+  // 카카오톡 인앱 브라우저인 경우 카카오톡 전용 URL scheme 사용
+  if (isKakaoInAppBrowser()) {
+    window.location.href = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(currentUrl);
+    return;
+  }
+
+  // 네이버 앱인 경우
+  if (navigator.userAgent.toLowerCase().includes('naver')) {
+    window.location.href = 'naversearchapp://openexternal?url=' + encodeURIComponent(currentUrl);
+    return;
+  }
+
+  // 기타 인앱 브라우저는 일반적인 방법 시도
   // iOS Safari로 열기
   if (navigator.userAgent.match(/iPhone|iPad|iPod/)) {
     window.location.href = currentUrl;
@@ -51,31 +64,25 @@ export function KakaoInAppBrowserWarning() {
   return (
     <Alert variant="destructive" className="mb-4">
       <AlertTriangle className="h-4 w-4" />
-      <AlertTitle>카카오톡 인앱 브라우저에서는 로그인이 제한됩니다</AlertTitle>
+      <AlertTitle>카카오톡 앱에서는 로그인할 수 없습니다</AlertTitle>
       <AlertDescription className="mt-2">
         <p className="mb-3">
-          Google 보안 정책으로 인해 카카오톡 앱 내에서는 로그인할 수 없습니다.
+          Google 보안 정책으로 인해 카카오톡 앱 내에서는 로그인이 제한됩니다.
           <br />
-          아래 버튼을 눌러 외부 브라우저(Safari, Chrome)에서 열어주세요.
+          <strong>아래 버튼을 눌러 Safari 또는 Chrome에서 열어주세요.</strong>
         </p>
-        <div className="space-y-2">
-          <Button
-            onClick={openInExternalBrowser}
-            variant="outline"
-            className="w-full"
-            size="sm"
-          >
-            <ExternalLink className="h-4 w-4 mr-2" />
-            외부 브라우저에서 열기
-          </Button>
-          <div className="text-xs text-muted-foreground mt-2">
-            <p className="font-semibold mb-1">또는 직접 열기:</p>
-            <ul className="list-disc list-inside space-y-1">
-              <li>화면 우측 상단 <strong>⋯</strong> (더보기) 버튼 클릭</li>
-              <li><strong>다른 브라우저로 열기</strong> 또는 <strong>Safari에서 열기</strong> 선택</li>
-            </ul>
-          </div>
-        </div>
+        <Button
+          onClick={openInExternalBrowser}
+          variant="default"
+          className="w-full bg-blue-600 hover:bg-blue-700"
+          size="lg"
+        >
+          <ExternalLink className="h-5 w-5 mr-2" />
+          Safari/Chrome에서 열기
+        </Button>
+        <p className="text-xs text-muted-foreground mt-3">
+          버튼을 누르면 자동으로 외부 브라우저가 실행됩니다.
+        </p>
       </AlertDescription>
     </Alert>
   );
