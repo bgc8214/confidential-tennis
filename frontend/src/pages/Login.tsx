@@ -5,6 +5,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import { KakaoInAppBrowserWarning, InAppBrowserWarning } from '../components/KakaoInAppBrowserWarning';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -58,6 +59,10 @@ export default function Login() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {/* 카카오톡 인앱 브라우저 경고 */}
+          <KakaoInAppBrowserWarning />
+          <InAppBrowserWarning />
+
           <form onSubmit={handleSubmit} className="space-y-4">
             {isSignUp && (
               <div className="space-y-2">
