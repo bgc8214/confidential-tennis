@@ -496,7 +496,7 @@ export default function ScheduleCreation() {
             selectedMemberIds={selectedMemberIds}
             constraints={constraints}
             onConstraintsChange={setConstraints}
-            totalMatches={settings.matchCount}
+            totalMatches={matchSettings.matchCount}
           />
         </div>
 
