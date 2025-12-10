@@ -15,6 +15,7 @@ import AuthCallback from './pages/AuthCallback';
 import ClubMembers from './pages/ClubMembers';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminClubMembers from './pages/AdminClubMembers';
+import { Toaster } from './components/ui/toaster';
 
 function App() {
   // 개발 환경에서는 basename 없음, 프로덕션에서는 /confidential-tennis/
@@ -22,6 +23,7 @@ function App() {
 
   return (
     <BrowserRouter basename={basename}>
+      <Toaster />
       <Routes>
         {/* 공개 라우트 */}
         <Route path="/login" element={<Login />} />
