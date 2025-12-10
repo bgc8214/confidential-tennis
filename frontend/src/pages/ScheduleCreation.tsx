@@ -9,6 +9,7 @@ import AttendeeSelector from '../components/AttendeeSelector';
 import GuestInput from '../components/GuestInput';
 import ConstraintPanel, { type ConstraintData } from '../components/ConstraintPanel';
 import AdvancedScheduleSettings from '../components/AdvancedScheduleSettings';
+import { useToast } from '../hooks/use-toast';
 
 // LocalStorage에서 마지막 설정 불러오기
 const loadLastSettings = (): MatchSettings => {
@@ -36,6 +37,7 @@ export default function ScheduleCreation() {
   const navigate = useNavigate();
   const { scheduleId } = useParams<{ scheduleId: string }>();
   const { currentClub } = useClub();
+  const { toast } = useToast();
   const [members, setMembers] = useState<Member[]>([]);
   const [selectedMemberIds, setSelectedMemberIds] = useState<number[]>([]);
   const [guests, setGuests] = useState<string[]>([]);
@@ -358,8 +360,25 @@ export default function ScheduleCreation() {
 
       // 중복 스케줄 에러 처리
       if (err?.code === '23505' || err?.message?.includes('duplicate key')) {
-        setError(`${date} 날짜에 이미 스케줄이 존재합니다. 다른 날짜를 선택하거나 기존 스케줄을 수정해주세요.`);
+        toast({
+          variant: "destructive",
+          title: "스케줄 중복",
+          description: `${date} 날짜에 이미 스케줄이 존재합니다. 다른 날짜를 선택하거나 기존 스케줄을 수정해주세요.`,
+        });
+        setError(`${date} 날짜에 이미 스케줄이 존재합니다.`);
+      } else if (err?.code === '23514' || err?.message?.includes('check_constraint_type_requirements')) {
+        toast({
+          variant: "destructive",
+          title: "데이터베이스 오류",
+          description: "제약조건 타입이 데이터베이스에 등록되지 않았습니다. 관리자에게 문의하세요.",
+        });
+        setError('데이터베이스 설정 오류가 발생했습니다.');
       } else {
+        toast({
+          variant: "destructive",
+          title: "스케줄 생성 실패",
+          description: err?.message || '알 수 없는 오류가 발생했습니다.',
+        });
         setError(err?.message || '스케줄 생성에 실패했습니다.');
       }
     } finally {
