@@ -373,18 +373,44 @@ export function generateSchedule(options: GenerationOptions): GeneratedMatch[] {
         const remainingOpportunitiesB = calculateRemainingOpportunities(b, excludedMatchesListB);
 
         // 0순위: 평균 대비 -2 이상 부족한 사람 최우선 (2경기 차이 방지)
-        // 또는 남은 기회로도 평균에 도달 불가능한 경우 최우선
         const gapA = baseExpected - countA;
         const gapB = baseExpected - countB;
 
         const maxPossibleA = countA + remainingOpportunitiesA;
         const maxPossibleB = countB + remainingOpportunitiesB;
 
-        const criticalA = gapA >= 2 || (maxPossibleA < baseExpected && remainingOpportunitiesA > 0);
-        const criticalB = gapB >= 2 || (maxPossibleB < baseExpected && remainingOpportunitiesB > 0);
+        // 제약조건 여부 확인
+        const hasConstraintA = excludedMatchesListA.length > 0;
+        const hasConstraintB = excludedMatchesListB.length > 0;
+
+        // critical 조건:
+        // 1. 평균보다 2경기 이상 부족
+        // 2. 남은 모든 기회를 써도 평균 미달
+        // 3. 제약조건이 있고, (남은 기회 - 현재 부족량) < 1 (여유가 없음)
+        const marginA = hasConstraintA ? remainingOpportunitiesA - gapA : Infinity;
+        const marginB = hasConstraintB ? remainingOpportunitiesB - gapB : Infinity;
+
+        const criticalA = gapA >= 2 ||
+                         (maxPossibleA < baseExpected && remainingOpportunitiesA > 0) ||
+                         (hasConstraintA && marginA < 1 && gapA > 0);
+        const criticalB = gapB >= 2 ||
+                         (maxPossibleB < baseExpected && remainingOpportunitiesB > 0) ||
+                         (hasConstraintB && marginB < 1 && gapB > 0);
 
         if (criticalA && !criticalB) return -1;
         if (!criticalA && criticalB) return 1;
+
+        // 둘 다 critical이면 더 긴급한 사람 우선
+        if (criticalA && criticalB) {
+          // margin이 더 적을수록 (여유가 없을수록) 우선
+          if (marginA !== marginB) {
+            return marginA - marginB;
+          }
+          // gap이 더 클수록 우선
+          if (gapA !== gapB) {
+            return gapB - gapA;
+          }
+        }
 
         // 1순위: 제약조건으로 남은 기회가 부족한 회원 우선
         if (excludedMatchesListA.length > 0 || excludedMatchesListB.length > 0) {
@@ -413,6 +439,29 @@ export function generateSchedule(options: GenerationOptions): GeneratedMatch[] {
         // 2순위: 평균 대비 부족한 사람 우선
         if (gapA !== gapB) {
           return gapB - gapA;
+        }
+
+        // 2.5순위: 제약조건이 있는 사람은 margin에 따라 조정
+        // margin이 0 이하면 매우 긴급 (여유가 전혀 없음), 그 외에는 보수적으로 배정
+        if (hasConstraintA || hasConstraintB) {
+          // margin 0 이하: 매우 긴급 (남은 기회가 부족량 이하)
+          const veryUrgentA = hasConstraintA && marginA <= 0;
+          const veryUrgentB = hasConstraintB && marginB <= 0;
+
+          if (veryUrgentA && !veryUrgentB) return -1;
+          if (!veryUrgentA && veryUrgentB) return 1;
+
+          // 둘 다 긴급하면 margin 비교
+          if (veryUrgentA && veryUrgentB && marginA !== marginB) {
+            return marginA - marginB;
+          }
+
+          // 둘 다 긴급하지 않은데 제약조건이 있으면, 일반인에게 양보
+          // 단, gap이 같을 때만 (gap이 다르면 위에서 이미 처리됨)
+          if (!veryUrgentA && !veryUrgentB && gapA === gapB) {
+            if (hasConstraintA && !hasConstraintB) return 1;  // B 우선
+            if (!hasConstraintA && hasConstraintB) return -1; // A 우선
+          }
         }
 
         // 3순위: 개인별 설정된 목표 경기 수 미달 회원 우선
