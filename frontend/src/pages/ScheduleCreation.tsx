@@ -130,7 +130,7 @@ export default function ScheduleCreation() {
       const constraintsData = await scheduleService.getConstraints(scheduleIdNum);
       const excludeLastMatch: number[] = [];
       const partnerPairs: [number, number][] = [];
-      const excludeMatches: { memberId: number; matchNumbers: number[] }[] = [];
+      const excludeMatches: { memberId: number; matchNumber: number }[] = [];
 
       constraintsData.forEach(constraint => {
         if (constraint.constraint_type === 'exclude_last_match' && constraint.member_id_1) {
@@ -138,15 +138,11 @@ export default function ScheduleCreation() {
         } else if (constraint.constraint_type === 'partner_pair' && constraint.member_id_1 && constraint.member_id_2) {
           partnerPairs.push([constraint.member_id_1, constraint.member_id_2]);
         } else if (constraint.constraint_type === 'exclude_match' && constraint.member_id_1 && constraint.match_number) {
-          const existing = excludeMatches.find(em => em.memberId === constraint.member_id_1);
-          if (existing) {
-            existing.matchNumbers.push(constraint.match_number);
-          } else {
-            excludeMatches.push({
-              memberId: constraint.member_id_1,
-              matchNumbers: [constraint.match_number]
-            });
-          }
+          // 각 제약조건을 개별 항목으로 추가
+          excludeMatches.push({
+            memberId: constraint.member_id_1,
+            matchNumber: constraint.match_number
+          });
         }
       });
 
@@ -324,19 +320,16 @@ export default function ScheduleCreation() {
       }
 
       // 특정 경기 제외
-      for (const { memberId, matchNumbers } of constraints.excludeMatches) {
-        // 각 경기 번호마다 개별 제약조건 생성
-        for (const matchNumber of matchNumbers) {
-          constraintPromises.push(
-            scheduleService.addConstraint({
-              schedule_id: schedule.id,
-              constraint_type: 'exclude_match',
-              member_id_1: memberId,
-              member_id_2: null,
-              match_number: matchNumber
-            })
-          );
-        }
+      for (const { memberId, matchNumber } of constraints.excludeMatches) {
+        constraintPromises.push(
+          scheduleService.addConstraint({
+            schedule_id: schedule.id,
+            constraint_type: 'exclude_match',
+            member_id_1: memberId,
+            member_id_2: null,
+            match_number: matchNumber
+          })
+        );
       }
 
       // 개인별 경기 수 설정

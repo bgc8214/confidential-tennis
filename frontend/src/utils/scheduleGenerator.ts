@@ -213,6 +213,10 @@ export function generateSchedule(options: GenerationOptions): GeneratedMatch[] {
       }
     });
 
+  // 전체 평균 경기 수 계산
+  const totalSlots = totalMatches * courtCount * 4;
+  const baseExpected = Math.floor(totalSlots / attendees.length);
+
   // 생성된 경기 목록
   const matches: GeneratedMatch[] = [];
 
@@ -304,7 +308,61 @@ export function generateSchedule(options: GenerationOptions): GeneratedMatch[] {
         const targetA = memberIdA ? targetMatchCounts.get(memberIdA) : undefined;
         const targetB = memberIdB ? targetMatchCounts.get(memberIdB) : undefined;
 
-        // 1순위: 목표 경기 수 미달 회원 우선
+        // 특정 경기 제외 제약조건이 있는 회원의 남은 기회 계산
+        const excludedMatchesListA = memberIdA && excludeMatchMap.has(memberIdA)
+          ? excludeMatchMap.get(memberIdA)!
+          : [];
+        const excludedMatchesListB = memberIdB && excludeMatchMap.has(memberIdB)
+          ? excludeMatchMap.get(memberIdB)!
+          : [];
+
+        // 남은 경기 중에서 제외되지 않은 경기 수 계산
+        const calculateRemainingOpportunities = (excludedList: number[]) => {
+          let remaining = 0;
+          for (let futureMatch = matchNum; futureMatch <= totalMatches; futureMatch++) {
+            if (!excludedList.includes(futureMatch)) {
+              remaining++;
+            }
+          }
+          return remaining;
+        };
+
+        const remainingOpportunitiesA = calculateRemainingOpportunities(excludedMatchesListA);
+        const remainingOpportunitiesB = calculateRemainingOpportunities(excludedMatchesListB);
+
+        // 0순위: 평균 대비 -2 이상 부족한 사람 최우선 (2경기 차이 방지)
+        const gapA = baseExpected - countA;
+        const gapB = baseExpected - countB;
+
+        const criticalA = gapA >= 2;
+        const criticalB = gapB >= 2;
+
+        if (criticalA && !criticalB) return -1;
+        if (!criticalA && criticalB) return 1;
+
+        // 1순위: 제약조건으로 남은 기회가 부족한 회원 우선
+        if (excludedMatchesListA.length > 0 || excludedMatchesListB.length > 0) {
+          const netOpportunityA = remainingOpportunitiesA - countA;
+          const netOpportunityB = remainingOpportunitiesB - countB;
+
+          // 남은 기회가 평균보다 부족한 경우 긴급
+          const urgentA = netOpportunityA < baseExpected && netOpportunityA >= 0;
+          const urgentB = netOpportunityB < baseExpected && netOpportunityB >= 0;
+
+          if (urgentA && !urgentB) return -1;
+          if (!urgentA && urgentB) return 1;
+
+          if (urgentA && urgentB && netOpportunityA !== netOpportunityB) {
+            return netOpportunityA - netOpportunityB;
+          }
+        }
+
+        // 2순위: 평균 대비 부족한 사람 우선
+        if (gapA !== gapB) {
+          return gapB - gapA;
+        }
+
+        // 3순위: 개인별 설정된 목표 경기 수 미달 회원 우선
         const underTargetA = targetA !== undefined && countA < targetA;
         const underTargetB = targetB !== undefined && countB < targetB;
 
@@ -313,27 +371,27 @@ export function generateSchedule(options: GenerationOptions): GeneratedMatch[] {
 
         // 둘 다 목표 미달이면, 더 부족한 사람 우선
         if (underTargetA && underTargetB && targetA && targetB) {
-          const gapA = targetA - countA;
-          const gapB = targetB - countB;
-          if (gapA !== gapB) return gapB - gapA; // 더 부족한 사람 우선
+          const targetGapA = targetA - countA;
+          const targetGapB = targetB - countB;
+          if (targetGapA !== targetGapB) return targetGapB - targetGapA;
         }
 
-        // 2순위: 목표 초과 회원은 후순위
+        // 4순위: 목표 초과 회원은 후순위
         const overTargetA = targetA !== undefined && countA >= targetA;
         const overTargetB = targetB !== undefined && countB >= targetB;
 
         if (overTargetA && !overTargetB) return 1;  // B 우선
         if (!overTargetA && overTargetB) return -1; // A 우선
 
-        // 3순위: 참여 횟수가 적은 사람 우선
+        // 5순위: 참여 횟수가 적은 사람 우선
         if (countA !== countB) return countA - countB;
 
-        // 4순위: 파트너 이력이 적은 사람 우선 (다양한 사람과 경기)
+        // 6순위: 파트너 이력이 적은 사람 우선 (다양한 사람과 경기)
         const partnersA = partnerHistory.get(a.id)?.size || 0;
         const partnersB = partnerHistory.get(b.id)?.size || 0;
         if (partnersA !== partnersB) return partnersA - partnersB;
 
-        // 3순위: 랜덤
+        // 7순위: 랜덤
         return Math.random() - 0.5;
       });
 
