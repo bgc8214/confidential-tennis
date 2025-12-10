@@ -316,26 +316,72 @@ export function generateSchedule(options: GenerationOptions): GeneratedMatch[] {
           ? excludeMatchMap.get(memberIdB)!
           : [];
 
-        // 남은 경기 중에서 제외되지 않은 경기 수 계산
-        const calculateRemainingOpportunities = (excludedList: number[]) => {
+        // 남은 경기 중에서 제외되지 않은 경기 수 계산 (코트 타입도 고려)
+        const calculateRemainingOpportunities = (attendee: Attendance, excludedList: number[]) => {
+          const gender = getGender(attendee);
           let remaining = 0;
+
           for (let futureMatch = matchNum; futureMatch <= totalMatches; futureMatch++) {
-            if (!excludedList.includes(futureMatch)) {
+            // 제외된 경기는 스킵
+            if (excludedList.includes(futureMatch)) {
+              continue;
+            }
+
+            // 해당 경기의 코트 타입들 확인
+            let canParticipate = false;
+
+            for (let futureCourtIdx = 0; futureCourtIdx < courtCount; futureCourtIdx++) {
+              let futureCourtType: 'mixed' | 'mens' | 'womens' = finalMatchTypes[futureMatch - 1] || 'mixed';
+
+              // courtTypes가 설정되어 있으면 적용
+              if (courtTypes) {
+                if (Array.isArray(courtTypes[0])) {
+                  const courtTypesForMatch = (courtTypes as ('mixed' | 'mens' | 'womens')[][])[futureMatch - 1];
+                  if (courtTypesForMatch && courtTypesForMatch[futureCourtIdx]) {
+                    futureCourtType = courtTypesForMatch[futureCourtIdx];
+                  }
+                } else {
+                  const courtTypesArray = courtTypes as ('mixed' | 'mens' | 'womens')[];
+                  if (courtTypesArray[futureCourtIdx]) {
+                    futureCourtType = courtTypesArray[futureCourtIdx];
+                  }
+                }
+              }
+
+              // 성별이 해당 코트 타입에 참여 가능한지 확인
+              if (futureCourtType === 'mixed' || gender === 'guest') {
+                canParticipate = true;
+                break;
+              } else if (futureCourtType === 'mens' && gender === 'male') {
+                canParticipate = true;
+                break;
+              } else if (futureCourtType === 'womens' && gender === 'female') {
+                canParticipate = true;
+                break;
+              }
+            }
+
+            if (canParticipate) {
               remaining++;
             }
           }
+
           return remaining;
         };
 
-        const remainingOpportunitiesA = calculateRemainingOpportunities(excludedMatchesListA);
-        const remainingOpportunitiesB = calculateRemainingOpportunities(excludedMatchesListB);
+        const remainingOpportunitiesA = calculateRemainingOpportunities(a, excludedMatchesListA);
+        const remainingOpportunitiesB = calculateRemainingOpportunities(b, excludedMatchesListB);
 
         // 0순위: 평균 대비 -2 이상 부족한 사람 최우선 (2경기 차이 방지)
+        // 또는 남은 기회로도 평균에 도달 불가능한 경우 최우선
         const gapA = baseExpected - countA;
         const gapB = baseExpected - countB;
 
-        const criticalA = gapA >= 2;
-        const criticalB = gapB >= 2;
+        const maxPossibleA = countA + remainingOpportunitiesA;
+        const maxPossibleB = countB + remainingOpportunitiesB;
+
+        const criticalA = gapA >= 2 || (maxPossibleA < baseExpected && remainingOpportunitiesA > 0);
+        const criticalB = gapB >= 2 || (maxPossibleB < baseExpected && remainingOpportunitiesB > 0);
 
         if (criticalA && !criticalB) return -1;
         if (!criticalA && criticalB) return 1;
@@ -352,8 +398,15 @@ export function generateSchedule(options: GenerationOptions): GeneratedMatch[] {
           if (urgentA && !urgentB) return -1;
           if (!urgentA && urgentB) return 1;
 
-          if (urgentA && urgentB && netOpportunityA !== netOpportunityB) {
-            return netOpportunityA - netOpportunityB;
+          // 둘 다 긴급한 경우, 남은 기회가 더 적은 사람 우선 (시간이 없음)
+          if (urgentA && urgentB) {
+            if (remainingOpportunitiesA !== remainingOpportunitiesB) {
+              return remainingOpportunitiesA - remainingOpportunitiesB;
+            }
+            // 남은 기회도 같으면 netOpportunity로 비교
+            if (netOpportunityA !== netOpportunityB) {
+              return netOpportunityA - netOpportunityB;
+            }
           }
         }
 
