@@ -324,16 +324,19 @@ export default function ScheduleCreation() {
       }
 
       // 특정 경기 제외
-      for (const { memberId, matchNumber } of constraints.excludeMatches) {
-        constraintPromises.push(
-          scheduleService.addConstraint({
-            schedule_id: schedule.id,
-            constraint_type: 'exclude_match',
-            member_id_1: memberId,
-            member_id_2: null,
-            match_number: matchNumber
-          })
-        );
+      for (const { memberId, matchNumbers } of constraints.excludeMatches) {
+        // 각 경기 번호마다 개별 제약조건 생성
+        for (const matchNumber of matchNumbers) {
+          constraintPromises.push(
+            scheduleService.addConstraint({
+              schedule_id: schedule.id,
+              constraint_type: 'exclude_match',
+              member_id_1: memberId,
+              member_id_2: null,
+              match_number: matchNumber
+            })
+          );
+        }
       }
 
       // 개인별 경기 수 설정
