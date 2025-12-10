@@ -276,6 +276,22 @@ export default function ScheduleGenerator() {
     }
   };
 
+  const handleCancel = async () => {
+    // 사용자에게 선택 옵션 제공
+    const deleteSchedule = window.confirm(
+      '이전 단계로 돌아가시겠습니까?\n\n확인: 설정을 수정하고 다시 생성\n취소: 홈으로 돌아가기'
+    );
+
+    if (deleteSchedule) {
+      // 이전 단계(스케줄 생성 페이지)로 돌아가기
+      // scheduleId를 포함하여 수정 모드로 돌아감
+      navigate(`/schedule/${scheduleId}/edit`);
+    } else {
+      // 홈으로 이동
+      navigate('/');
+    }
+  };
+
   if (loading) {
     return (
       <div className="w-full flex flex-col justify-center items-center min-h-[60vh] space-y-4 py-12">
@@ -621,14 +637,14 @@ export default function ScheduleGenerator() {
             </button>
 
             <button
-              onClick={() => navigate('/schedule/new')}
+              onClick={handleCancel}
               disabled={isSaving}
-              className="flex-1 min-w-0 sm:min-w-[140px] px-4 py-3 sm:px-6 sm:py-4 bg-white border-2 border-red-300 text-red-600 rounded-lg sm:rounded-xl font-bold hover:bg-red-50 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg flex items-center justify-center space-x-2 text-sm sm:text-base"
+              className="flex-1 min-w-0 sm:min-w-[140px] px-4 py-3 sm:px-6 sm:py-4 bg-white border-2 border-gray-300 text-gray-700 rounded-lg sm:rounded-xl font-bold hover:bg-gray-50 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg flex items-center justify-center space-x-2 text-sm sm:text-base"
             >
               <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
-              <span>취소</span>
+              <span>이전</span>
             </button>
           </div>
         </div>
