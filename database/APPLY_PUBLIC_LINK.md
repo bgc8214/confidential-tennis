@@ -63,3 +63,4 @@ CREATE POLICY "Anyone can view public schedules"
 - 공개 링크는 스케줄 생성 시 또는 나중에 생성할 수 있습니다.
 
 
+

@@ -24,3 +24,4 @@ CREATE INDEX IF NOT EXISTS idx_matches_schedule_id ON matches(schedule_id);
 CREATE INDEX IF NOT EXISTS idx_constraints_schedule_id ON constraints(schedule_id);
 
 
+

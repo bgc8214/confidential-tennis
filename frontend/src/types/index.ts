@@ -85,7 +85,7 @@ export interface Match {
 export interface Constraint {
   id: number;
   schedule_id: number;
-  constraint_type: 'exclude_last_match' | 'partner_pair' | 'exclude_match';
+  constraint_type: 'exclude_last_match' | 'partner_pair' | 'exclude_match' | 'match_count';
   member_id_1?: number;
   member_id_2?: number;
   match_number?: number;

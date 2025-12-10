@@ -334,6 +334,21 @@ export default function ScheduleCreation() {
         );
       }
 
+      // 개인별 경기 수 설정
+      if (constraints.matchCounts) {
+        for (const { memberId, count } of constraints.matchCounts) {
+          constraintPromises.push(
+            scheduleService.addConstraint({
+              schedule_id: schedule.id,
+              constraint_type: 'match_count',
+              member_id_1: memberId,
+              member_id_2: null,
+              match_number: count // match_number 필드에 경기 수 저장
+            })
+          );
+        }
+      }
+
       await Promise.all(constraintPromises);
 
       // 4. 스케줄 생성 완료 - 다음 단계로 이동 (경기 배정)
@@ -481,6 +496,7 @@ export default function ScheduleCreation() {
             selectedMemberIds={selectedMemberIds}
             constraints={constraints}
             onConstraintsChange={setConstraints}
+            totalMatches={settings.matchCount}
           />
         </div>
 

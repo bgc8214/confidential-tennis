@@ -203,6 +203,16 @@ export function generateSchedule(options: GenerationOptions): GeneratedMatch[] {
       }
     });
 
+  // 개인별 목표 경기 수 (match_number 필드에 저장됨)
+  const targetMatchCounts = new Map<number, number>();
+  constraints
+    .filter(c => c.constraint_type === 'match_count')
+    .forEach(c => {
+      if (c.member_id_1 && c.match_number) {
+        targetMatchCounts.set(c.member_id_1, c.match_number);
+      }
+    });
+
   // 생성된 경기 목록
   const matches: GeneratedMatch[] = [];
 
@@ -283,15 +293,42 @@ export function generateSchedule(options: GenerationOptions): GeneratedMatch[] {
         });
       }
 
-      // 참여 횟수가 적은 순으로 정렬 (KDK 고려)
+      // 참여 횟수가 적은 순으로 정렬 (목표 경기 수 및 KDK 고려)
       availableAttendees.sort((a, b) => {
         const countA = participationCount.get(a.id) || 0;
         const countB = participationCount.get(b.id) || 0;
+        const memberIdA = a.member_id;
+        const memberIdB = b.member_id;
 
-        // 1순위: 참여 횟수가 적은 사람 우선
+        // 목표 경기 수 가져오기
+        const targetA = memberIdA ? targetMatchCounts.get(memberIdA) : undefined;
+        const targetB = memberIdB ? targetMatchCounts.get(memberIdB) : undefined;
+
+        // 1순위: 목표 경기 수 미달 회원 우선
+        const underTargetA = targetA !== undefined && countA < targetA;
+        const underTargetB = targetB !== undefined && countB < targetB;
+
+        if (underTargetA && !underTargetB) return -1; // A 우선
+        if (!underTargetA && underTargetB) return 1;  // B 우선
+
+        // 둘 다 목표 미달이면, 더 부족한 사람 우선
+        if (underTargetA && underTargetB && targetA && targetB) {
+          const gapA = targetA - countA;
+          const gapB = targetB - countB;
+          if (gapA !== gapB) return gapB - gapA; // 더 부족한 사람 우선
+        }
+
+        // 2순위: 목표 초과 회원은 후순위
+        const overTargetA = targetA !== undefined && countA >= targetA;
+        const overTargetB = targetB !== undefined && countB >= targetB;
+
+        if (overTargetA && !overTargetB) return 1;  // B 우선
+        if (!overTargetA && overTargetB) return -1; // A 우선
+
+        // 3순위: 참여 횟수가 적은 사람 우선
         if (countA !== countB) return countA - countB;
 
-        // 2순위: 파트너 이력이 적은 사람 우선 (다양한 사람과 경기)
+        // 4순위: 파트너 이력이 적은 사람 우선 (다양한 사람과 경기)
         const partnersA = partnerHistory.get(a.id)?.size || 0;
         const partnersB = partnerHistory.get(b.id)?.size || 0;
         if (partnersA !== partnersB) return partnersA - partnersB;

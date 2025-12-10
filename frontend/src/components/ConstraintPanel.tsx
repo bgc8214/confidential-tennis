@@ -7,6 +7,7 @@ export interface ConstraintData {
   excludeLastMatch: number[]; // 마지막 경기 제외할 회원 ID 목록
   partnerPairs: Array<[number, number]>; // 파트너 페어 (회원 ID 쌍)
   excludeMatches: Array<{ memberId: number; matchNumber: number }>; // 특정 경기 제외
+  matchCounts?: Array<{ memberId: number; count: number }>; // 개인별 경기 수 설정
 }
 
 interface ConstraintPanelProps {
@@ -14,18 +15,51 @@ interface ConstraintPanelProps {
   selectedMemberIds: number[];
   constraints: ConstraintData;
   onConstraintsChange: (constraints: ConstraintData) => void;
+  totalMatches?: number; // 총 경기 수 (경기 수 선택 드롭다운용)
 }
 
 export default function ConstraintPanel({
   members,
   selectedMemberIds,
   constraints,
-  onConstraintsChange
+  onConstraintsChange,
+  totalMatches = 6
 }: ConstraintPanelProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   // 선택된 회원만 필터링
   const selectedMembers = members.filter(m => selectedMemberIds.includes(m.id));
+
+  // 개인별 경기 수 설정
+  const [matchCountMemberId, setMatchCountMemberId] = useState<number | ''>('');
+  const [matchCount, setMatchCount] = useState<number>(3);
+
+  const handleAddMatchCount = () => {
+    if (!matchCountMemberId || matchCount < 1) return;
+
+    const matchCounts = constraints.matchCounts || [];
+
+    // 중복 체크
+    if (matchCounts.some(mc => mc.memberId === matchCountMemberId)) {
+      alert('이미 설정된 회원입니다.');
+      return;
+    }
+
+    onConstraintsChange({
+      ...constraints,
+      matchCounts: [...matchCounts, { memberId: Number(matchCountMemberId), count: matchCount }]
+    });
+    setMatchCountMemberId('');
+    setMatchCount(3);
+  };
+
+  const handleRemoveMatchCount = (memberId: number) => {
+    const matchCounts = constraints.matchCounts || [];
+    onConstraintsChange({
+      ...constraints,
+      matchCounts: matchCounts.filter(mc => mc.memberId !== memberId)
+    });
+  };
 
   // 마지막 경기 제외 토글
   const handleExcludeLastMatchToggle = (memberId: number) => {
@@ -111,6 +145,7 @@ export default function ConstraintPanel({
   };
 
   const totalConstraints =
+    (constraints.matchCounts?.length || 0) +
     constraints.excludeLastMatch.length +
     constraints.partnerPairs.length +
     constraints.excludeMatches.length;
@@ -152,7 +187,86 @@ export default function ConstraintPanel({
             </div>
           ) : (
             <>
-              {/* 1. 마지막 경기 제외 */}
+              {/* 1. 개인별 경기 수 설정 */}
+              <div className="space-y-3">
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-1">
+                    🎯 개인별 경기 수 설정
+                  </h4>
+                  <p className="text-sm text-gray-600">
+                    특정 회원의 목표 경기 수를 설정하세요
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap gap-3">
+                  <select
+                    value={matchCountMemberId}
+                    onChange={(e) => setMatchCountMemberId(e.target.value ? Number(e.target.value) : '')}
+                    className="flex-1 min-w-[140px] px-4 py-2 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#F4CE6A]"
+                  >
+                    <option value="">회원 선택</option>
+                    {selectedMembers.map(m => (
+                      <option
+                        key={m.id}
+                        value={m.id}
+                        disabled={constraints.matchCounts?.some(mc => mc.memberId === m.id)}
+                      >
+                        {m.name}
+                      </option>
+                    ))}
+                  </select>
+
+                  <select
+                    value={matchCount}
+                    onChange={(e) => setMatchCount(Number(e.target.value))}
+                    className="flex-1 min-w-[120px] px-4 py-2 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#F4CE6A]"
+                  >
+                    {Array.from({ length: totalMatches }, (_, i) => i + 1).map(num => (
+                      <option key={num} value={num}>{num}경기</option>
+                    ))}
+                  </select>
+
+                  <Button
+                    type="button"
+                    onClick={handleAddMatchCount}
+                    disabled={!matchCountMemberId}
+                    className="bg-[#F4CE6A] hover:bg-[#E5BE5A] text-gray-900"
+                  >
+                    추가
+                  </Button>
+                </div>
+
+                {constraints.matchCounts && constraints.matchCounts.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-sm text-gray-600">설정된 회원:</p>
+                    {constraints.matchCounts.map(mc => (
+                      <div
+                        key={mc.memberId}
+                        className="flex items-center justify-between px-4 py-3 bg-[#F4CE6A]/10 border-2 border-[#F4CE6A]/30 rounded-xl"
+                      >
+                        <span className="text-sm font-medium text-gray-900">
+                          • {getMemberName(mc.memberId)}: {mc.count}경기
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveMatchCount(mc.memberId)}
+                          className="text-red-600 hover:text-red-800 font-medium text-sm"
+                        >
+                          삭제
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="px-4 py-3 bg-blue-50 border-2 border-blue-200 rounded-xl">
+                  <p className="text-sm text-blue-700">
+                    💡 나머지 회원은 자동으로 균등하게 배분됩니다
+                  </p>
+                </div>
+              </div>
+
+              {/* 2. 마지막 경기 제외 */}
               <div className="space-y-3">
                 <div>
                   <h4 className="font-semibold text-gray-900 mb-1">
@@ -184,7 +298,7 @@ export default function ConstraintPanel({
                 </div>
               </div>
 
-              {/* 2. 파트너 페어 지정 */}
+              {/* 3. 파트너 페어 지정 */}
               <div className="space-y-3">
                 <div>
                   <h4 className="font-semibold text-gray-900 mb-1">
@@ -257,7 +371,7 @@ export default function ConstraintPanel({
                 )}
               </div>
 
-              {/* 3. 특정 경기 제외 */}
+              {/* 4. 특정 경기 제외 */}
               <div className="space-y-3">
                 <div>
                   <h4 className="font-semibold text-gray-900 mb-1">

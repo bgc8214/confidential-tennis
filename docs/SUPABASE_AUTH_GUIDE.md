@@ -409,3 +409,4 @@ members (클럽별 회원 정보)
 - [Row Level Security 가이드](https://supabase.com/docs/guides/auth/row-level-security)
 
 
+
