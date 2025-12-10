@@ -22,3 +22,4 @@ CREATE INDEX IF NOT EXISTS idx_schedules_court_types ON schedules USING GIN (cou
 COMMENT ON COLUMN schedules.match_types IS '경기별 타입 배열: ["mixed", "mens", "womens", ...] (JSONB)';
 COMMENT ON COLUMN schedules.court_types IS '코트별 타입 배열: ["mixed", "mens", "womens", ...] (JSONB, 선택사항)';
 
+

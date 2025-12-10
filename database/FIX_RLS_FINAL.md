@@ -117,3 +117,4 @@ CREATE POLICY "Club owners can remove members"
 - 소유자가 모든 멤버를 보려면 `clubs` 테이블을 통해 확인할 수 있습니다 (소유자는 `owner_id`로 직접 확인되므로 재귀 없음).
 
 
+

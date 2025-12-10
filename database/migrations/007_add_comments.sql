@@ -12,3 +12,4 @@ COMMENT ON TABLE matches IS '경기 배정 정보 (6경기, 2코트)';
 COMMENT ON TABLE constraints IS '스케줄 생성 제약조건';
 
 
+

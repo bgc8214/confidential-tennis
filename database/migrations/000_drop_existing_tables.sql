@@ -19,3 +19,4 @@ DROP FUNCTION IF EXISTS generate_club_code() CASCADE;
 DROP FUNCTION IF EXISTS auto_add_club_owner() CASCADE;
 
 
+

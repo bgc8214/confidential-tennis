@@ -91,3 +91,4 @@ CREATE POLICY "Club owners can remove members"
 - `auto_add_club_owner()` 트리거가 클럽 생성 시 자동으로 `club_members`에 소유자를 추가하므로, 이 트리거가 실행될 때 INSERT 정책이 통과해야 합니다.
 
 
+

@@ -180,3 +180,4 @@ WHERE match_type IS NULL;
    - 경기 타입 변경 시 기존 배정된 경기가 유효한지 확인 필요
 
 
+

@@ -56,3 +56,4 @@ CREATE POLICY "Users can view clubs they belong to"
 - 소유자는 `owner_id`로 직접 확인하므로 재귀가 발생하지 않습니다.
 
 
+
