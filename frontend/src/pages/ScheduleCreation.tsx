@@ -553,7 +553,7 @@ export default function ScheduleCreation() {
               <button
                 type="submit"
                 disabled={!isValidAttendeeCount || isSubmitting}
-                className="flex-1 bg-gradient-to-r from-[#D4765A] to-[#2E7D4E] text-white py-4 rounded-xl font-bold hover:shadow-2xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-xl hover:scale-105 flex items-center justify-center space-x-2"
+                className="flex-1 bg-emerald-600 text-white py-4 rounded-xl font-bold hover:shadow-2xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-xl hover:scale-105 flex items-center justify-center space-x-2"
               >
                 {isSubmitting ? (
                   <>

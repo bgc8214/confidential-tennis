@@ -130,7 +130,7 @@ export default function ScheduleList() {
         </div>
         <Button
           onClick={() => navigate('/schedule/new')}
-          className="bg-gradient-to-r from-[#D4765A] to-[#2E7D4E] text-white shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
+          className="bg-emerald-600 text-white shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
         >
           <Plus className="w-5 h-5" />
           새 스케줄 만들기
@@ -187,7 +187,7 @@ export default function ScheduleList() {
                   onClick={() => setStatusFilter(filter.value)}
                   className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
                     statusFilter === filter.value
-                      ? 'bg-gradient-to-r from-[#D4765A] to-[#2E7D4E] text-white shadow-md'
+                      ? 'bg-emerald-600 text-white shadow-md'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
@@ -229,7 +229,7 @@ export default function ScheduleList() {
             </p>
             <Button
               onClick={() => navigate('/schedule/new')}
-              className="bg-gradient-to-r from-[#D4765A] to-[#2E7D4E] text-white"
+              className="bg-emerald-600 text-white"
             >
               <Plus className="w-4 h-4 mr-2" />
               첫 스케줄 만들기
@@ -295,7 +295,7 @@ export default function ScheduleList() {
                       </Button>
                       <Button
                         onClick={() => handleViewSchedule(schedule)}
-                        className="bg-gradient-to-r from-[#D4765A] to-[#2E7D4E] text-white"
+                        className="bg-emerald-600 text-white"
                       >
                         상세보기
                         <ChevronRight className="w-4 h-4 ml-1" />

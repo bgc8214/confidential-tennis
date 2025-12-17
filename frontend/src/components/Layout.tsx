@@ -43,7 +43,7 @@ export default function Layout() {
           <div className="flex justify-between items-center">
             {/* Logo */}
             <Link to="/" className="flex items-center gap-2 sm:gap-3" onClick={closeMobileMenu}>
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-[#D4765A] to-[#2E7D4E] flex items-center justify-center shadow-lg">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-emerald-600 flex items-center justify-center shadow-lg">
                 <span className="text-xl sm:text-2xl">🎾</span>
               </div>
               <div>
@@ -268,7 +268,7 @@ export default function Layout() {
                 <Link
                   to="/login"
                   onClick={closeMobileMenu}
-                  className="block px-4 py-3 rounded-xl font-medium transition-all bg-gradient-to-r from-[#D4765A] to-[#2E7D4E] text-white shadow-lg"
+                  className="block px-4 py-3 rounded-xl font-medium transition-all bg-emerald-600 text-white shadow-lg"
                 >
                   🔐 로그인
                 </Link>
@@ -323,7 +323,7 @@ function NavLink({ to, active, children }: NavLinkProps) {
       to={to}
       className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
         active
-          ? 'bg-gradient-to-r from-[#D4765A] to-[#2E7D4E] text-white shadow-lg'
+          ? 'bg-emerald-600 text-white shadow-lg'
           : 'text-gray-700 hover:bg-gray-100'
       }`}
     >
@@ -346,7 +346,7 @@ function MobileNavLink({ to, active, onClick, children }: MobileNavLinkProps) {
       onClick={onClick}
       className={`block px-4 py-3 rounded-xl font-medium transition-all ${
         active
-          ? 'bg-gradient-to-r from-[#D4765A] to-[#2E7D4E] text-white shadow-lg'
+          ? 'bg-emerald-600 text-white shadow-lg'
           : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
       }`}
     >

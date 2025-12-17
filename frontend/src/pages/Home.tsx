@@ -71,7 +71,7 @@ export default function Home() {
       <div className="w-full space-y-20">
         {/* Hero Section */}
         <section className="w-full">
-          <div className="bg-gradient-to-br from-[#D4765A] to-[#2E7D4E] rounded-3xl py-20 px-8 md:px-16 relative overflow-hidden text-center">
+          <div className="bg-emerald-600 rounded-3xl py-20 px-8 md:px-16 relative overflow-hidden text-center">
             <div className="relative z-10">
               <div className="text-6xl mb-6">🎾</div>
               <h1 className="text-5xl md:text-6xl font-bold text-white mb-6 leading-tight">
@@ -133,7 +133,7 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <Card className="border-2 hover:shadow-xl transition-shadow">
               <CardHeader className="text-center pb-4 pt-8">
-                <div className="mx-auto w-16 h-16 bg-gradient-to-br from-[#D4765A] to-[#2E7D4E] rounded-2xl flex items-center justify-center mb-4">
+                <div className="mx-auto w-16 h-16 bg-emerald-600 rounded-2xl flex items-center justify-center mb-4">
                   <Zap className="w-8 h-8 text-white" />
                 </div>
                 <CardTitle className="text-xl">3초 자동 배정</CardTitle>
@@ -149,7 +149,7 @@ export default function Home() {
 
             <Card className="border-2 hover:shadow-xl transition-shadow">
               <CardHeader className="text-center pb-4 pt-8">
-                <div className="mx-auto w-16 h-16 bg-gradient-to-br from-[#D4765A] to-[#2E7D4E] rounded-2xl flex items-center justify-center mb-4">
+                <div className="mx-auto w-16 h-16 bg-emerald-600 rounded-2xl flex items-center justify-center mb-4">
                   <CheckCircle2 className="w-8 h-8 text-white" />
                 </div>
                 <CardTitle className="text-xl">공평한 분배</CardTitle>
@@ -165,7 +165,7 @@ export default function Home() {
 
             <Card className="border-2 hover:shadow-xl transition-shadow">
               <CardHeader className="text-center pb-4 pt-8">
-                <div className="mx-auto w-16 h-16 bg-gradient-to-br from-[#D4765A] to-[#2E7D4E] rounded-2xl flex items-center justify-center mb-4">
+                <div className="mx-auto w-16 h-16 bg-emerald-600 rounded-2xl flex items-center justify-center mb-4">
                   <Share2 className="w-8 h-8 text-white" />
                 </div>
                 <CardTitle className="text-xl">간편한 공유</CardTitle>
@@ -182,7 +182,7 @@ export default function Home() {
         </section>
 
         {/* How It Works */}
-        <section className="w-full bg-gradient-to-br from-gray-50 to-gray-100 rounded-3xl p-12">
+        <section className="w-full bg-gray-50 rounded-3xl p-12">
           <h2 className="text-3xl font-bold text-center mb-12 text-gray-900">
             이렇게 간단합니다
           </h2>
@@ -221,7 +221,7 @@ export default function Home() {
           <Button
             size="lg"
             onClick={() => navigate('/login')}
-            className="bg-gradient-to-r from-[#D4765A] to-[#2E7D4E] text-white text-lg px-12 py-7 h-auto font-bold shadow-xl hover:shadow-2xl"
+            className="bg-emerald-600 text-white text-lg px-12 py-7 h-auto font-bold shadow-xl hover:shadow-2xl"
           >
             <LogIn className="mr-2 w-5 h-5" />
             무료로 시작하기
@@ -235,7 +235,7 @@ export default function Home() {
   return (
     <div className="w-full space-y-8">
       {/* Welcome Section */}
-      <div className="bg-gradient-to-r from-[#D4765A] to-[#2E7D4E] rounded-2xl p-8 text-white">
+      <div className="bg-emerald-600 rounded-2xl p-8 text-white">
         <h1 className="text-3xl font-bold mb-2">
           안녕하세요, {currentClub?.name}! 🎾
         </h1>
@@ -252,7 +252,7 @@ export default function Home() {
         >
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-[#D4765A] to-[#2E7D4E] rounded-xl flex items-center justify-center">
+              <div className="w-12 h-12 bg-emerald-600 rounded-xl flex items-center justify-center">
                 <Plus className="w-6 h-6 text-white" />
               </div>
               <div>
@@ -325,7 +325,7 @@ export default function Home() {
               </p>
               <Button
                 onClick={() => navigate('/schedule/new')}
-                className="bg-gradient-to-r from-[#D4765A] to-[#2E7D4E] text-white"
+                className="bg-emerald-600 text-white"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 첫 스케줄 만들기

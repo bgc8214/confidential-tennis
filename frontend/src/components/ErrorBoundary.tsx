@@ -38,7 +38,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 this.setState({ hasError: false, error: null });
                 window.location.reload();
               }}
-              className="bg-gradient-to-r from-[#D4765A] to-[#2E7D4E] text-white px-6 py-3 rounded-xl font-medium hover:shadow-lg transition-all"
+              className="bg-emerald-600 text-white px-6 py-3 rounded-xl font-medium hover:shadow-lg transition-all"
             >
               페이지 새로고침
             </button>
