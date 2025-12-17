@@ -71,16 +71,35 @@ export default function Home() {
       <div className="w-full space-y-20">
         {/* Hero Section */}
         <section className="w-full">
-          <div className="bg-emerald-600 rounded-3xl py-20 px-8 md:px-16 relative overflow-hidden text-center">
+          <div className="bg-white border-2 border-emerald-500 rounded-3xl py-20 px-8 md:px-16 relative overflow-hidden">
             <div className="relative z-10">
-              <div className="text-6xl mb-6">🎾</div>
-              <h1 className="text-5xl md:text-6xl font-bold text-white mb-6 leading-tight">
+              {/* 마스코트 이미지 */}
+              <div className="flex justify-center mb-8">
+                <div className="relative">
+                  <div className="w-40 h-40 md:w-48 md:h-48 rounded-full overflow-hidden shadow-2xl ring-4 ring-emerald-500/30 animate-bounce-gentle">
+                    <img
+                      src="/seolha.png"
+                      alt="코트플래너 마스코트"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  {/* 떠다니는 테니스공들 */}
+                  <div className="absolute -top-2 -right-2 animate-bounce">
+                    <span className="text-4xl">🎾</span>
+                  </div>
+                  <div className="absolute -bottom-2 -left-2 animate-bounce" style={{ animationDelay: '0.2s' }}>
+                    <span className="text-3xl">🎾</span>
+                  </div>
+                </div>
+              </div>
+
+              <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight text-center">
                 테니스 클럽<br />
-                <span className="text-[#F4CE6A]">스케줄 자동 생성</span>
+                <span className="text-emerald-600">스케줄 자동 생성</span>
               </h1>
 
-              <p className="text-xl md:text-2xl text-white/90 mb-10 max-w-3xl mx-auto leading-relaxed">
-                참석자를 선택하면 <span className="font-bold text-[#F4CE6A]">공평한 경기 배정</span>을 자동으로 생성합니다.<br />
+              <p className="text-xl md:text-2xl text-gray-700 mb-10 max-w-3xl mx-auto leading-relaxed text-center">
+                참석자를 선택하면 <span className="font-bold text-emerald-600">공평한 경기 배정</span>을 자동으로 생성합니다.<br />
                 더 이상 엑셀로 고민하지 마세요!
               </p>
 
@@ -89,7 +108,7 @@ export default function Home() {
                   <Button
                     size="lg"
                     onClick={() => navigate('/clubs')}
-                    className="bg-white text-[#D4765A] hover:bg-white/90 text-lg px-10 py-7 h-auto font-bold shadow-xl"
+                    className="bg-emerald-600 text-white hover:bg-emerald-700 text-lg px-10 py-7 h-auto font-bold shadow-xl"
                   >
                     클럽 선택하기
                     <ArrowRight className="ml-2 w-5 h-5" />
@@ -98,7 +117,7 @@ export default function Home() {
                   <Button
                     size="lg"
                     onClick={() => navigate('/login')}
-                    className="bg-white text-[#D4765A] hover:bg-white/90 text-lg px-10 py-7 h-auto font-bold shadow-xl"
+                    className="bg-emerald-600 text-white hover:bg-emerald-700 text-lg px-10 py-7 h-auto font-bold shadow-xl"
                   >
                     <LogIn className="mr-2 w-5 h-5" />
                     무료로 시작하기
@@ -108,17 +127,17 @@ export default function Home() {
 
               {/* 핵심 메트릭 */}
               <div className="mt-12 grid grid-cols-3 gap-6 max-w-2xl mx-auto">
-                <div className="text-center">
-                  <div className="text-4xl font-bold text-white">1-10</div>
-                  <div className="text-sm text-white/80 mt-1">경기 수 자유</div>
+                <div className="text-center bg-gray-50 rounded-2xl p-6">
+                  <div className="text-4xl font-bold text-emerald-600">1-10</div>
+                  <div className="text-sm text-gray-600 mt-1">경기 수 자유</div>
                 </div>
-                <div className="text-center">
-                  <div className="text-4xl font-bold text-white">8-12</div>
-                  <div className="text-sm text-white/80 mt-1">참석 인원</div>
+                <div className="text-center bg-gray-50 rounded-2xl p-6">
+                  <div className="text-4xl font-bold text-emerald-600">8-12</div>
+                  <div className="text-sm text-gray-600 mt-1">참석 인원</div>
                 </div>
-                <div className="text-center">
-                  <div className="text-4xl font-bold text-white">3초</div>
-                  <div className="text-sm text-white/80 mt-1">스케줄 생성</div>
+                <div className="text-center bg-gray-50 rounded-2xl p-6">
+                  <div className="text-4xl font-bold text-emerald-600">3초</div>
+                  <div className="text-sm text-gray-600 mt-1">스케줄 생성</div>
                 </div>
               </div>
             </div>
@@ -127,54 +146,57 @@ export default function Home() {
 
         {/* Features Section */}
         <section className="w-full">
-          <h2 className="text-3xl font-bold text-center mb-12 text-gray-900">
-            왜 이 서비스를 사용해야 할까요?
+          <h2 className="text-3xl font-bold text-center mb-4 text-gray-900">
+            이렇게 간단합니다
           </h2>
+          <p className="text-center text-gray-600 mb-12">
+            복잡한 엑셀 작업은 이제 그만! 클릭 몇 번이면 끝!
+          </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <Card className="border-2 hover:shadow-xl transition-shadow">
+            <Card className="border-2 border-emerald-200 hover:border-emerald-500 hover:shadow-xl transition-all">
               <CardHeader className="text-center pb-4 pt-8">
-                <div className="mx-auto w-16 h-16 bg-emerald-600 rounded-2xl flex items-center justify-center mb-4">
-                  <Zap className="w-8 h-8 text-white" />
+                <div className="mx-auto w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center mb-4">
+                  <Zap className="w-8 h-8 text-emerald-600" />
                 </div>
-                <CardTitle className="text-xl">3초 자동 배정</CardTitle>
+                <CardTitle className="text-xl">자동으로 생성합니다</CardTitle>
               </CardHeader>
               <CardContent className="text-center">
                 <CardDescription className="text-base leading-relaxed">
-                  엑셀로 몇 시간씩 고민하지 마세요.<br />
                   참석자만 체크하면 공평한 경기를<br />
-                  <span className="font-bold text-[#D4765A]">자동으로 생성</span>합니다.
+                  <span className="font-bold text-emerald-600">자동으로 생성</span>합니다.<br />
+                  엑셀로 몇 시간씩 고민할 필요 없어요!
                 </CardDescription>
               </CardContent>
             </Card>
 
-            <Card className="border-2 hover:shadow-xl transition-shadow">
+            <Card className="border-2 border-emerald-200 hover:border-emerald-500 hover:shadow-xl transition-all">
               <CardHeader className="text-center pb-4 pt-8">
-                <div className="mx-auto w-16 h-16 bg-emerald-600 rounded-2xl flex items-center justify-center mb-4">
-                  <CheckCircle2 className="w-8 h-8 text-white" />
+                <div className="mx-auto w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center mb-4">
+                  <CheckCircle2 className="w-8 h-8 text-emerald-600" />
                 </div>
-                <CardTitle className="text-xl">공평한 분배</CardTitle>
+                <CardTitle className="text-xl">충분한 휴식 시간을 보장합니다</CardTitle>
               </CardHeader>
               <CardContent className="text-center">
                 <CardDescription className="text-base leading-relaxed">
-                  모든 참석자가 균등하게 경기에 참여하고<br />
                   연속 경기를 최소화하여<br />
-                  <span className="font-bold text-[#2E7D4E]">충분한 휴식 시간</span>을 보장합니다.
+                  <span className="font-bold text-emerald-600">충분한 휴식</span>을 보장합니다.<br />
+                  모든 회원이 골고루 뉴게임!
                 </CardDescription>
               </CardContent>
             </Card>
 
-            <Card className="border-2 hover:shadow-xl transition-shadow">
+            <Card className="border-2 border-emerald-200 hover:border-emerald-500 hover:shadow-xl transition-all">
               <CardHeader className="text-center pb-4 pt-8">
-                <div className="mx-auto w-16 h-16 bg-emerald-600 rounded-2xl flex items-center justify-center mb-4">
-                  <Share2 className="w-8 h-8 text-white" />
+                <div className="mx-auto w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center mb-4">
+                  <Share2 className="w-8 h-8 text-emerald-600" />
                 </div>
-                <CardTitle className="text-xl">간편한 공유</CardTitle>
+                <CardTitle className="text-xl">스케줄을 확인할 수 있습니다</CardTitle>
               </CardHeader>
               <CardContent className="text-center">
                 <CardDescription className="text-base leading-relaxed">
-                  공개 링크를 카카오톡으로 공유하면<br />
-                  회원가입 없이도 누구나<br />
-                  <span className="font-bold text-[#F4CE6A]">스케줄을 확인</span>할 수 있습니다.
+                  회원가입 없이도<br />
+                  <span className="font-bold text-emerald-600">링크 공유</span>만으로<br />
+                  누구나 스케줄을 확인할 수 있어요!
                 </CardDescription>
               </CardContent>
             </Card>
@@ -182,28 +204,31 @@ export default function Home() {
         </section>
 
         {/* How It Works */}
-        <section className="w-full bg-gray-50 rounded-3xl p-12">
-          <h2 className="text-3xl font-bold text-center mb-12 text-gray-900">
-            이렇게 간단합니다
+        <section className="w-full bg-white border-2 border-gray-200 rounded-3xl p-12">
+          <h2 className="text-3xl font-bold text-center mb-4 text-gray-900">
+            사용 방법
           </h2>
+          <p className="text-center text-gray-600 mb-12">
+            4단계만 따라하면 완성!
+          </p>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 max-w-5xl mx-auto">
             <div className="text-center">
-              <div className="w-16 h-16 bg-[#D4765A] text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4">1</div>
+              <div className="w-16 h-16 bg-emerald-600 text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4 shadow-lg">1</div>
               <h3 className="font-bold text-lg mb-2">회원 등록</h3>
               <p className="text-sm text-gray-600">동아리 회원들을<br />간단히 등록</p>
             </div>
             <div className="text-center">
-              <div className="w-16 h-16 bg-[#2E7D4E] text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4">2</div>
+              <div className="w-16 h-16 bg-emerald-600 text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4 shadow-lg">2</div>
               <h3 className="font-bold text-lg mb-2">참석자 선택</h3>
               <p className="text-sm text-gray-600">이번 주 참석자를<br />체크박스로 선택</p>
             </div>
             <div className="text-center">
-              <div className="w-16 h-16 bg-[#D4765A] text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4">3</div>
+              <div className="w-16 h-16 bg-emerald-600 text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4 shadow-lg">3</div>
               <h3 className="font-bold text-lg mb-2">자동 생성</h3>
               <p className="text-sm text-gray-600">3초만에 공평한<br />경기 배정 완성</p>
             </div>
             <div className="text-center">
-              <div className="w-16 h-16 bg-[#2E7D4E] text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4">4</div>
+              <div className="w-16 h-16 bg-emerald-600 text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4 shadow-lg">4</div>
               <h3 className="font-bold text-lg mb-2">링크 공유</h3>
               <p className="text-sm text-gray-600">카카오톡으로<br />간편하게 공유</p>
             </div>
@@ -264,12 +289,12 @@ export default function Home() {
         </Card>
 
         <Card
-          className="cursor-pointer hover:shadow-lg transition-all border-2 hover:border-[#2E7D4E]"
+          className="cursor-pointer hover:shadow-lg transition-all border-2 hover:border-emerald-500"
           onClick={() => navigate('/schedules')}
         >
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-[#2E7D4E] to-[#D4765A] rounded-xl flex items-center justify-center">
+              <div className="w-12 h-12 bg-emerald-600 rounded-xl flex items-center justify-center">
                 <Calendar className="w-6 h-6 text-white" />
               </div>
               <div>
@@ -281,13 +306,13 @@ export default function Home() {
         </Card>
 
         <Card
-          className="cursor-pointer hover:shadow-lg transition-all border-2 hover:border-[#F4CE6A]"
+          className="cursor-pointer hover:shadow-lg transition-all border-2 hover:border-emerald-500"
           onClick={() => navigate('/members')}
         >
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-[#F4CE6A] to-[#E0BA5B] rounded-xl flex items-center justify-center">
-                <Users className="w-6 h-6 text-gray-900" />
+              <div className="w-12 h-12 bg-emerald-600 rounded-xl flex items-center justify-center">
+                <Users className="w-6 h-6 text-white" />
               </div>
               <div>
                 <h3 className="font-bold text-lg">회원 관리</h3>
@@ -394,10 +419,10 @@ export default function Home() {
           </CardContent>
         </Card>
 
-        <Card className="border-2 bg-gradient-to-br from-purple-50 to-pink-50">
+        <Card className="border-2 border-emerald-200 bg-emerald-50">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Share2 className="w-5 h-5 text-purple-700" />
+              <Share2 className="w-5 h-5 text-emerald-700" />
               공개 링크로 공유
             </CardTitle>
             <CardDescription>
