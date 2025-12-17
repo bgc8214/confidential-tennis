@@ -4,8 +4,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { KakaoInAppBrowserWarning, InAppBrowserWarning } from '../components/KakaoInAppBrowserWarning';
+import { Sparkles, TrendingUp, Zap } from 'lucide-react';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -26,13 +26,11 @@ export default function Login() {
     try {
       if (isSignUp) {
         await signUp(email, password, fullName);
-        // 회원가입 성공 시 로그인 페이지로
         setIsSignUp(false);
         setError(null);
         alert('회원가입이 완료되었습니다. 로그인해주세요.');
       } else {
         await signIn(email, password);
-        // 로그인 성공 시 홈으로
         navigate('/');
       }
     } catch (err: any) {
@@ -43,30 +41,84 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#2E7D4E] to-[#D4765A] p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="w-16 h-16 bg-gradient-to-br from-[#D4765A] to-[#2E7D4E] rounded-xl flex items-center justify-center mx-auto mb-4">
-            <span className="text-3xl">🎾</span>
-          </div>
-          <CardTitle className="text-2xl">
-            {isSignUp ? '회원가입' : '로그인'}
-          </CardTitle>
-          <CardDescription>
-            {isSignUp
-              ? '새 계정을 만들어 시작하세요'
-              : '테니스 동아리 스케줄 관리 시스템'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {/* 카카오톡 인앱 브라우저 경고 */}
-          <KakaoInAppBrowserWarning />
-          <InAppBrowserWarning />
+    <div className="min-h-screen relative overflow-hidden flex items-center justify-center p-4">
+      {/* Animated Background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-emerald-600 via-teal-500 to-orange-500 opacity-90"></div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Animated Orbs */}
+      <div className="absolute top-0 left-0 w-96 h-96 bg-orange-400 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-float"></div>
+      <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-400 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-float animation-delay-2000"></div>
+      <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-teal-400 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-float animation-delay-4000"></div>
+
+      {/* Grid Pattern Overlay */}
+      <div className="absolute inset-0 opacity-10" style={{
+        backgroundImage: `
+          repeating-linear-gradient(0deg, transparent, transparent 50px, rgba(255,255,255,0.1) 50px, rgba(255,255,255,0.1) 51px),
+          repeating-linear-gradient(90deg, transparent, transparent 50px, rgba(255,255,255,0.1) 50px, rgba(255,255,255,0.1) 51px)
+        `
+      }}></div>
+
+      {/* Main Content */}
+      <div className="relative z-10 w-full max-w-md animate-slide-up">
+        {/* Logo & Brand */}
+        <div className="text-center mb-8 animate-scale-in">
+          <div className="inline-flex items-center justify-center w-24 h-24 mb-6 relative">
+            {/* Glow Effect */}
+            <div className="absolute inset-0 bg-white rounded-3xl blur-2xl opacity-40 animate-glow"></div>
+            <div className="relative w-full h-full bg-gradient-to-br from-orange-400 to-emerald-500 rounded-3xl flex items-center justify-center transform rotate-6 hover:rotate-12 transition-transform duration-300">
+              <span className="text-5xl">🎾</span>
+            </div>
+          </div>
+          <h1 className="text-5xl font-black text-white mb-2 tracking-tight">
+            Court<span className="text-orange-300">Planner</span>
+          </h1>
+          <p className="text-white/80 text-lg font-medium">스마트한 경기 스케줄 관리</p>
+        </div>
+
+        {/* Glass Card */}
+        <div className="glass-card rounded-3xl p-8 shadow-glass-lg animate-slide-up animation-delay-100">
+          {/* Warnings */}
+          <div className="mb-6">
+            <KakaoInAppBrowserWarning />
+            <InAppBrowserWarning />
+          </div>
+
+          {/* Tab Switcher */}
+          <div className="flex gap-2 mb-8 p-1 bg-white/10 rounded-2xl">
+            <button
+              onClick={() => {
+                setIsSignUp(false);
+                setError(null);
+              }}
+              className={`flex-1 py-3 px-4 rounded-xl font-semibold transition-all duration-300 ${
+                !isSignUp
+                  ? 'bg-white text-emerald-600 shadow-lg'
+                  : 'text-white/70 hover:text-white'
+              }`}
+            >
+              로그인
+            </button>
+            <button
+              onClick={() => {
+                setIsSignUp(true);
+                setError(null);
+              }}
+              className={`flex-1 py-3 px-4 rounded-xl font-semibold transition-all duration-300 ${
+                isSignUp
+                  ? 'bg-white text-emerald-600 shadow-lg'
+                  : 'text-white/70 hover:text-white'
+              }`}
+            >
+              회원가입
+            </button>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-5">
             {isSignUp && (
-              <div className="space-y-2">
-                <Label htmlFor="fullName">이름</Label>
+              <div className="space-y-2 animate-slide-down">
+                <Label htmlFor="fullName" className="text-white font-medium">
+                  이름
+                </Label>
                 <Input
                   id="fullName"
                   type="text"
@@ -74,12 +126,15 @@ export default function Login() {
                   onChange={(e) => setFullName(e.target.value)}
                   required
                   placeholder="홍길동"
+                  className="bg-white/90 border-0 h-12 rounded-xl text-gray-900 placeholder:text-gray-400 focus-visible:ring-2 focus-visible:ring-white backdrop-blur-sm"
                 />
               </div>
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="email">이메일</Label>
+              <Label htmlFor="email" className="text-white font-medium">
+                이메일
+              </Label>
               <Input
                 id="email"
                 type="email"
@@ -87,11 +142,14 @@ export default function Login() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 placeholder="user@example.com"
+                className="bg-white/90 border-0 h-12 rounded-xl text-gray-900 placeholder:text-gray-400 focus-visible:ring-2 focus-visible:ring-white backdrop-blur-sm"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">비밀번호</Label>
+              <Label htmlFor="password" className="text-white font-medium">
+                비밀번호
+              </Label>
               <Input
                 id="password"
                 type="password"
@@ -100,34 +158,45 @@ export default function Login() {
                 required
                 minLength={6}
                 placeholder="••••••"
+                className="bg-white/90 border-0 h-12 rounded-xl text-gray-900 placeholder:text-gray-400 focus-visible:ring-2 focus-visible:ring-white backdrop-blur-sm"
               />
             </div>
 
             {error && (
-              <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg text-sm">
+              <div className="bg-red-500/20 backdrop-blur-sm border border-red-300/30 text-white px-4 py-3 rounded-xl text-sm animate-slide-down">
                 {error}
               </div>
             )}
 
             <Button
               type="submit"
-              className="w-full bg-gradient-to-r from-[#D4765A] to-[#2E7D4E] hover:from-[#B85C3D] hover:to-[#1F5A35]"
+              className="w-full h-14 bg-gradient-to-r from-orange-400 to-emerald-500 hover:from-orange-500 hover:to-emerald-600 text-white font-bold text-lg rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] btn-hover-lift border-0"
               disabled={loading}
             >
-              {loading ? '처리 중...' : isSignUp ? '회원가입' : '로그인'}
+              {loading ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  처리 중...
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <Zap className="w-5 h-5" />
+                  {isSignUp ? '계정 만들기' : '시작하기'}
+                </div>
+              )}
             </Button>
 
-            {/* 구분선 */}
+            {/* Divider */}
             <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300"></div>
+                <div className="w-full border-t border-white/20"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">또는</span>
+                <span className="px-3 bg-transparent text-white/60 font-medium">또는</span>
               </div>
             </div>
 
-            {/* 구글 로그인 버튼 */}
+            {/* Google Login */}
             <Button
               type="button"
               onClick={async () => {
@@ -142,10 +211,13 @@ export default function Login() {
               }}
               disabled={googleLoading || loading}
               variant="outline"
-              className="w-full border-2 border-gray-300 hover:bg-gray-50"
+              className="w-full h-14 bg-white/90 hover:bg-white border-0 text-gray-800 font-semibold rounded-xl shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02] backdrop-blur-sm"
             >
               {googleLoading ? (
-                '처리 중...'
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 border-2 border-gray-300 border-t-gray-800 rounded-full animate-spin"></div>
+                  처리 중...
+                </div>
               ) : (
                 <>
                   <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
@@ -166,29 +238,30 @@ export default function Login() {
                       d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                     />
                   </svg>
-                  구글로 {isSignUp ? '회원가입' : '로그인'}
+                  구글로 {isSignUp ? '시작하기' : '로그인'}
                 </>
               )}
             </Button>
-
-            <div className="text-center text-sm">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsSignUp(!isSignUp);
-                  setError(null);
-                }}
-                className="text-[#2E7D4E] hover:underline"
-              >
-                {isSignUp
-                  ? '이미 계정이 있으신가요? 로그인'
-                  : '계정이 없으신가요? 회원가입'}
-              </button>
-            </div>
           </form>
-        </CardContent>
-      </Card>
+        </div>
+
+        {/* Features */}
+        <div className="mt-8 grid grid-cols-3 gap-4 animate-slide-up animation-delay-200">
+          {[
+            { icon: Sparkles, text: '자동 배정' },
+            { icon: TrendingUp, text: '통계 분석' },
+            { icon: Zap, text: '빠른 공유' },
+          ].map((feature, i) => (
+            <div
+              key={i}
+              className="glass-card rounded-2xl p-4 text-center hover:scale-105 transition-transform duration-300"
+            >
+              <feature.icon className="w-6 h-6 mx-auto mb-2 text-white" />
+              <p className="text-white/90 text-sm font-medium">{feature.text}</p>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
-
