@@ -3,20 +3,28 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useIsSuperAdmin } from '../hooks/useIsSuperAdmin';
 import { adminService } from '../services/adminService';
 import { clubMemberService } from '../services/clubMemberService';
-import type { ClubMember } from '../types';
+import type { ClubMember, UserProfile } from '../types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Shield, ShieldCheck, User, Crown } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { ArrowLeft, Shield, ShieldCheck, User, Crown, Search, UserPlus, Trash2 } from 'lucide-react';
+import { useToast } from '../hooks/use-toast';
 
 export default function AdminClubMembers() {
   const { clubId } = useParams<{ clubId: string }>();
   const navigate = useNavigate();
   const { isSuperAdmin, loading: authLoading } = useIsSuperAdmin();
+  const { toast } = useToast();
   const [members, setMembers] = useState<ClubMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // 사용자 검색
+  const [searchEmail, setSearchEmail] = useState('');
+  const [searchResults, setSearchResults] = useState<UserProfile[]>([]);
+  const [searching, setSearching] = useState(false);
 
   useEffect(() => {
     if (!authLoading && isSuperAdmin && clubId) {
@@ -46,8 +54,100 @@ export default function AdminClubMembers() {
     try {
       await clubMemberService.updateMemberRole(memberId, newRole);
       await loadMembers();
+      toast({
+        title: "권한 변경 완료",
+        description: "멤버 권한이 변경되었습니다.",
+      });
     } catch (err) {
-      alert('권한 변경에 실패했습니다.');
+      toast({
+        variant: "destructive",
+        title: "권한 변경 실패",
+        description: "권한 변경에 실패했습니다.",
+      });
+      console.error(err);
+    }
+  };
+
+  const handleSearch = async () => {
+    if (!searchEmail.trim()) {
+      toast({
+        variant: "destructive",
+        title: "이메일 입력 필요",
+        description: "검색할 이메일을 입력하세요.",
+      });
+      return;
+    }
+
+    try {
+      setSearching(true);
+      const results = await adminService.searchUsersByEmail(searchEmail);
+      setSearchResults(results);
+      if (results.length === 0) {
+        toast({
+          title: "검색 결과 없음",
+          description: "해당 이메일의 사용자를 찾을 수 없습니다.",
+        });
+      }
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        title: "검색 실패",
+        description: "사용자 검색에 실패했습니다.",
+      });
+      console.error(err);
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const handleAddUser = async (userId: string) => {
+    if (!clubId) return;
+
+    // 이미 클럽 멤버인지 확인
+    if (members.some(m => m.user_id === userId)) {
+      toast({
+        variant: "destructive",
+        title: "이미 멤버입니다",
+        description: "이 사용자는 이미 클럽 멤버입니다.",
+      });
+      return;
+    }
+
+    try {
+      await adminService.addUserToClub(parseInt(clubId), userId, 'member');
+      await loadMembers();
+      setSearchResults([]);
+      setSearchEmail('');
+      toast({
+        title: "멤버 추가 완료",
+        description: "새 멤버가 클럽에 추가되었습니다.",
+      });
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        title: "멤버 추가 실패",
+        description: "멤버 추가에 실패했습니다.",
+      });
+      console.error(err);
+    }
+  };
+
+  const handleRemoveUser = async (memberId: number, userName: string) => {
+    if (!confirm(`정말 ${userName} 님을 클럽에서 제거하시겠습니까?`)) return;
+
+    try {
+      await adminService.removeUserFromClub(memberId);
+      await loadMembers();
+      toast({
+        title: "멤버 제거 완료",
+        description: `${userName} 님이 클럽에서 제거되었습니다.`,
+      });
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        title: "멤버 제거 실패",
+        description: "멤버 제거에 실패했습니다.",
+      });
       console.error(err);
     }
   };
@@ -149,6 +249,46 @@ export default function AdminClubMembers() {
             </p>
           </div>
 
+          {/* 사용자 검색 및 추가 섹션 */}
+          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <h3 className="font-semibold text-gray-900 mb-3 flex items-center space-x-2">
+              <UserPlus className="w-5 h-5" />
+              <span>새 멤버 추가</span>
+            </h3>
+            <div className="flex gap-2 mb-4">
+              <Input
+                placeholder="이메일로 사용자 검색..."
+                value={searchEmail}
+                onChange={(e) => setSearchEmail(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                className="flex-1"
+              />
+              <Button onClick={handleSearch} disabled={searching}>
+                <Search className="w-4 h-4 mr-2" />
+                {searching ? '검색 중...' : '검색'}
+              </Button>
+            </div>
+
+            {searchResults.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-gray-700">검색 결과:</p>
+                {searchResults.map(user => (
+                  <div key={user.id} className="flex items-center justify-between p-3 bg-white rounded-lg border">
+                    <div>
+                      <p className="font-medium">{user.full_name || '이름 없음'}</p>
+                      <p className="text-sm text-gray-600">{user.email}</p>
+                    </div>
+                    <Button onClick={() => handleAddUser(user.id)} size="sm">
+                      <UserPlus className="w-4 h-4 mr-2" />
+                      추가
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* 현재 멤버 목록 */}
           {members.length === 0 ? (
             <p className="text-gray-500 text-center py-8">멤버가 없습니다.</p>
           ) : (
@@ -160,6 +300,7 @@ export default function AdminClubMembers() {
                   <TableHead>권한</TableHead>
                   <TableHead>가입일</TableHead>
                   <TableHead className="text-right">권한 변경</TableHead>
+                  <TableHead className="text-right">제거</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -196,6 +337,16 @@ export default function AdminClubMembers() {
                           <SelectItem value="member">Member</SelectItem>
                         </SelectContent>
                       </Select>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleRemoveUser(member.id, member.user_profile?.full_name || '이름 없음')}
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        제거
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}

@@ -72,4 +72,42 @@ export const adminService = {
     if (error) return null;
     return data;
   },
+
+  // 이메일로 사용자 검색 (슈퍼 어드민 전용)
+  async searchUsersByEmail(email: string): Promise<UserProfile[]> {
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .ilike('email', `%${email}%`)
+      .limit(10);
+
+    if (error) throw error;
+    return data || [];
+  },
+
+  // 클럽에 사용자 추가 (슈퍼 어드민 전용)
+  async addUserToClub(clubId: number, userId: string, role: 'owner' | 'admin' | 'member' = 'member'): Promise<ClubMember> {
+    const { data, error } = await supabase
+      .from('club_members')
+      .insert([{
+        club_id: clubId,
+        user_id: userId,
+        role: role
+      }])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
+  // 클럽에서 사용자 제거 (슈퍼 어드민 전용)
+  async removeUserFromClub(clubMemberId: number): Promise<void> {
+    const { error } = await supabase
+      .from('club_members')
+      .delete()
+      .eq('id', clubMemberId);
+
+    if (error) throw error;
+  },
 };
