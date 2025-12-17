@@ -102,10 +102,15 @@ export default function ScheduleCreation() {
       setStartTime(schedule.start_time);
       setEndTime(schedule.end_time);
 
-      // 경기 설정 로드
-      if (schedule.match_settings) {
-        setMatchSettings(schedule.match_settings);
-      }
+      // 경기 설정 로드 (DB 필드에서 복원)
+      const loadedSettings: MatchSettings = {
+        totalMatches: schedule.total_matches || 6,
+        matchDuration: schedule.match_duration || 30,
+        courtCount: schedule.court_count || 2,
+        matchTypes: schedule.match_types || Array(schedule.total_matches || 6).fill(schedule.match_type || 'mixed'),
+        courtTypes: schedule.court_types
+      };
+      setMatchSettings(loadedSettings);
 
       // 공개 링크 여부
       setGeneratePublicLink(!!schedule.public_link);
@@ -131,6 +136,7 @@ export default function ScheduleCreation() {
       const excludeLastMatch: number[] = [];
       const partnerPairs: [number, number][] = [];
       const excludeMatches: { memberId: number; matchNumber: number }[] = [];
+      const matchCounts: { memberId: number; count: number }[] = [];
 
       constraintsData.forEach(constraint => {
         if (constraint.constraint_type === 'exclude_last_match' && constraint.member_id_1) {
@@ -138,15 +144,19 @@ export default function ScheduleCreation() {
         } else if (constraint.constraint_type === 'partner_pair' && constraint.member_id_1 && constraint.member_id_2) {
           partnerPairs.push([constraint.member_id_1, constraint.member_id_2]);
         } else if (constraint.constraint_type === 'exclude_match' && constraint.member_id_1 && constraint.match_number) {
-          // 각 제약조건을 개별 항목으로 추가
           excludeMatches.push({
             memberId: constraint.member_id_1,
             matchNumber: constraint.match_number
           });
+        } else if (constraint.constraint_type === 'match_count' && constraint.member_id_1 && constraint.match_number) {
+          matchCounts.push({
+            memberId: constraint.member_id_1,
+            count: constraint.match_number
+          });
         }
       });
 
-      setConstraints({ excludeLastMatch, partnerPairs, excludeMatches });
+      setConstraints({ excludeLastMatch, partnerPairs, excludeMatches, matchCounts });
       setError(null);
     } catch (err) {
       setError('스케줄 데이터를 불러오는데 실패했습니다.');
@@ -511,7 +521,7 @@ export default function ScheduleCreation() {
             selectedMemberIds={selectedMemberIds}
             constraints={constraints}
             onConstraintsChange={setConstraints}
-            totalMatches={matchSettings.matchCount}
+            totalMatches={matchSettings.totalMatches}
           />
         </div>
 

@@ -23,3 +23,5 @@ COMMENT ON COLUMN schedules.match_types IS '경기별 타입 배열: ["mixed", "
 COMMENT ON COLUMN schedules.court_types IS '코트별 타입 배열: ["mixed", "mens", "womens", ...] (JSONB, 선택사항)';
 
 
+
+

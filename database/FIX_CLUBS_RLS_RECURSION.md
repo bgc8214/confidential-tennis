@@ -57,3 +57,5 @@ CREATE POLICY "Users can view clubs they belong to"
 
 
 
+
+
