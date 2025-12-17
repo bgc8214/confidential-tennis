@@ -30,6 +30,8 @@ export default defineConfig(({ mode }) => ({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        // 큰 파일(마스코트 이미지 등)도 캐시 허용
+        maximumFileSizeToCacheInBytes: 10 * 1024 * 1024, // 10MB
         // Supabase 요청은 캐싱하지 않음 (API 응답은 항상 최신이어야 함)
         runtimeCaching: []
       }
