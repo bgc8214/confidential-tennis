@@ -15,6 +15,7 @@ import AuthCallback from './pages/AuthCallback';
 import ClubMembers from './pages/ClubMembers';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminClubMembers from './pages/AdminClubMembers';
+import NotFound from './pages/NotFound';
 import { Toaster } from './components/ui/toaster';
 
 function App() {
@@ -121,6 +122,9 @@ function App() {
             }
           />
         </Route>
+
+        {/* 404 페이지 */}
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
   );

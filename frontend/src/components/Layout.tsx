@@ -43,8 +43,12 @@ export default function Layout() {
           <div className="flex justify-between items-center">
             {/* Logo */}
             <Link to="/" className="flex items-center gap-2 sm:gap-3" onClick={closeMobileMenu}>
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-emerald-600 flex items-center justify-center shadow-lg">
-                <span className="text-xl sm:text-2xl">🎾</span>
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden shadow-lg ring-2 ring-emerald-500/20">
+                <img
+                  src="/seolha.png"
+                  alt="코트플래너 마스코트"
+                  className="w-full h-full object-cover"
+                />
               </div>
               <div>
                 <h1 className="text-lg sm:text-xl font-bold text-gray-900">코트플래너</h1>
@@ -288,21 +292,21 @@ export default function Layout() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-gradient-to-r from-[#2E7D4E] to-[#D4765A] text-white mt-12 sm:mt-20">
+      <footer className="bg-emerald-600 text-white mt-12 sm:mt-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
           <div className="flex flex-col items-center gap-4">
             <div className="text-center">
               <p className="font-semibold text-lg">코트플래너</p>
-              <p className="text-sm text-white/80 mt-1">스마트한 테니스 스케줄 관리</p>
+              <p className="text-sm text-white/90 mt-1">스마트한 테니스 스케줄 관리</p>
             </div>
             {currentClub && (
               <div className="text-center">
-                <p className="text-xs text-white/60 mb-1">현재 클럽</p>
+                <p className="text-xs text-white/70 mb-1">현재 클럽</p>
                 <p className="font-medium">{currentClub.name}</p>
               </div>
             )}
           </div>
-          <div className="mt-6 pt-6 border-t border-white/20 text-center text-sm text-white/70">
+          <div className="mt-6 pt-6 border-t border-white/20 text-center text-sm text-white/80">
             © 2024 코트플래너. Powered by Supabase & React.
           </div>
         </div>

@@ -60,6 +60,10 @@ export default {
         'slide-down': 'slide-down 0.5s ease-out',
         'scale-in': 'scale-in 0.3s ease-out',
         'wiggle': 'wiggle 1s ease-in-out infinite',
+        'spin-slow': 'spin 3s linear infinite',
+        'bounce-gentle': 'bounce-gentle 2s ease-in-out infinite',
+        'bounce-delay-1': 'bounce 1s ease-in-out infinite 0.1s',
+        'bounce-delay-2': 'bounce 1s ease-in-out infinite 0.2s',
       },
       keyframes: {
         float: {
@@ -89,6 +93,10 @@ export default {
         wiggle: {
           '0%, 100%': { transform: 'rotate(-3deg)' },
           '50%': { transform: 'rotate(3deg)' },
+        },
+        'bounce-gentle': {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-5px)' },
         },
       },
       boxShadow: {
