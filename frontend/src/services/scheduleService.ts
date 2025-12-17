@@ -44,17 +44,17 @@ export const scheduleService = {
     return data;
   },
 
-  // 공개 링크 생성 (16자리 대문자)
-  generatePublicLink(): string {
+  // 공개 링크 문자열 생성 헬퍼 (16자리 대문자)
+  _createPublicLinkString(): string {
     return Math.random().toString(36).substring(2, 18).toUpperCase();
   },
 
   // 스케줄 생성
   async create(clubId: number, schedule: Omit<Schedule, 'id' | 'club_id' | 'created_at' | 'updated_at'>, generatePublicLink: boolean = false): Promise<Schedule> {
     const scheduleData: any = { ...schedule, club_id: clubId };
-    
+
     if (generatePublicLink) {
-      scheduleData.public_link = this.generatePublicLink();
+      scheduleData.public_link = this._createPublicLinkString();
     }
 
     const { data, error } = await supabase
@@ -73,10 +73,10 @@ export const scheduleService = {
     if (!scheduleId || isNaN(Number(scheduleId)) || scheduleId <= 0) {
       throw new Error(`유효하지 않은 스케줄 ID입니다: ${scheduleId}`);
     }
-    
-    // 공개 링크 문자열 생성 함수 호출 (이름 충돌 방지를 위해 직접 구현)
-    const publicLink = Math.random().toString(36).substring(2, 18).toUpperCase();
-    
+
+    // 공개 링크 문자열 생성
+    const publicLink = this._createPublicLinkString();
+
     const { error } = await supabase
       .from('schedules')
       .update({ public_link: publicLink })
