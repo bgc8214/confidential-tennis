@@ -5,7 +5,6 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { KakaoInAppBrowserWarning, InAppBrowserWarning } from '../components/KakaoInAppBrowserWarning';
-import { Sparkles, TrendingUp, Zap } from 'lucide-react';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -41,42 +40,22 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden flex items-center justify-center p-4">
-      {/* Animated Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-emerald-600 via-teal-500 to-orange-500 opacity-90"></div>
-
-      {/* Animated Orbs */}
-      <div className="absolute top-0 left-0 w-96 h-96 bg-orange-400 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-float"></div>
-      <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-400 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-float animation-delay-2000"></div>
-      <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-teal-400 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-float animation-delay-4000"></div>
-
-      {/* Grid Pattern Overlay */}
-      <div className="absolute inset-0 opacity-10" style={{
-        backgroundImage: `
-          repeating-linear-gradient(0deg, transparent, transparent 50px, rgba(255,255,255,0.1) 50px, rgba(255,255,255,0.1) 51px),
-          repeating-linear-gradient(90deg, transparent, transparent 50px, rgba(255,255,255,0.1) 50px, rgba(255,255,255,0.1) 51px)
-        `
-      }}></div>
-
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
       {/* Main Content */}
-      <div className="relative z-10 w-full max-w-md animate-slide-up">
+      <div className="w-full max-w-md">
         {/* Logo & Brand */}
-        <div className="text-center mb-8 animate-scale-in">
-          <div className="inline-flex items-center justify-center w-24 h-24 mb-6 relative">
-            {/* Glow Effect */}
-            <div className="absolute inset-0 bg-white rounded-3xl blur-2xl opacity-40 animate-glow"></div>
-            <div className="relative w-full h-full bg-gradient-to-br from-orange-400 to-emerald-500 rounded-3xl flex items-center justify-center transform rotate-6 hover:rotate-12 transition-transform duration-300">
-              <span className="text-5xl">🎾</span>
-            </div>
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center justify-center w-20 h-20 mb-6 bg-emerald-600 rounded-2xl">
+            <span className="text-4xl">🎾</span>
           </div>
-          <h1 className="text-5xl font-black text-white mb-2 tracking-tight">
-            Court<span className="text-orange-300">Planner</span>
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">
+            CourtPlanner
           </h1>
-          <p className="text-white/80 text-lg font-medium">스마트한 경기 스케줄 관리</p>
+          <p className="text-gray-600 text-lg">스마트한 경기 스케줄 관리</p>
         </div>
 
-        {/* Glass Card */}
-        <div className="glass-card rounded-3xl p-8 shadow-glass-lg animate-slide-up animation-delay-100">
+        {/* Card */}
+        <div className="bg-white rounded-2xl p-8 shadow-lg border border-gray-100">
           {/* Warnings */}
           <div className="mb-6">
             <KakaoInAppBrowserWarning />
@@ -84,16 +63,16 @@ export default function Login() {
           </div>
 
           {/* Tab Switcher */}
-          <div className="flex gap-2 mb-8 p-1 bg-white/10 rounded-2xl">
+          <div className="flex gap-2 mb-8 p-1 bg-gray-100 rounded-xl">
             <button
               onClick={() => {
                 setIsSignUp(false);
                 setError(null);
               }}
-              className={`flex-1 py-3 px-4 rounded-xl font-semibold transition-all duration-300 ${
+              className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-all duration-200 ${
                 !isSignUp
-                  ? 'bg-white text-emerald-600 shadow-lg'
-                  : 'text-white/70 hover:text-white'
+                  ? 'bg-white text-emerald-600 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
               }`}
             >
               로그인
@@ -103,10 +82,10 @@ export default function Login() {
                 setIsSignUp(true);
                 setError(null);
               }}
-              className={`flex-1 py-3 px-4 rounded-xl font-semibold transition-all duration-300 ${
+              className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-all duration-200 ${
                 isSignUp
-                  ? 'bg-white text-emerald-600 shadow-lg'
-                  : 'text-white/70 hover:text-white'
+                  ? 'bg-white text-emerald-600 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
               }`}
             >
               회원가입
@@ -115,8 +94,8 @@ export default function Login() {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             {isSignUp && (
-              <div className="space-y-2 animate-slide-down">
-                <Label htmlFor="fullName" className="text-white font-medium">
+              <div className="space-y-2">
+                <Label htmlFor="fullName" className="text-gray-700 font-medium">
                   이름
                 </Label>
                 <Input
@@ -126,13 +105,13 @@ export default function Login() {
                   onChange={(e) => setFullName(e.target.value)}
                   required
                   placeholder="홍길동"
-                  className="bg-white/90 border-0 h-12 rounded-xl text-gray-900 placeholder:text-gray-400 focus-visible:ring-2 focus-visible:ring-white backdrop-blur-sm"
+                  className="h-12 border-gray-200 focus-visible:ring-emerald-500"
                 />
               </div>
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-white font-medium">
+              <Label htmlFor="email" className="text-gray-700 font-medium">
                 이메일
               </Label>
               <Input
@@ -142,12 +121,12 @@ export default function Login() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 placeholder="user@example.com"
-                className="bg-white/90 border-0 h-12 rounded-xl text-gray-900 placeholder:text-gray-400 focus-visible:ring-2 focus-visible:ring-white backdrop-blur-sm"
+                className="h-12 border-gray-200 focus-visible:ring-emerald-500"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-white font-medium">
+              <Label htmlFor="password" className="text-gray-700 font-medium">
                 비밀번호
               </Label>
               <Input
@@ -158,19 +137,19 @@ export default function Login() {
                 required
                 minLength={6}
                 placeholder="••••••"
-                className="bg-white/90 border-0 h-12 rounded-xl text-gray-900 placeholder:text-gray-400 focus-visible:ring-2 focus-visible:ring-white backdrop-blur-sm"
+                className="h-12 border-gray-200 focus-visible:ring-emerald-500"
               />
             </div>
 
             {error && (
-              <div className="bg-red-500/20 backdrop-blur-sm border border-red-300/30 text-white px-4 py-3 rounded-xl text-sm animate-slide-down">
+              <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-xl text-sm">
                 {error}
               </div>
             )}
 
             <Button
               type="submit"
-              className="w-full h-14 bg-gradient-to-r from-orange-400 to-emerald-500 hover:from-orange-500 hover:to-emerald-600 text-white font-bold text-lg rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] btn-hover-lift border-0"
+              className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl"
               disabled={loading}
             >
               {loading ? (
@@ -179,20 +158,17 @@ export default function Login() {
                   처리 중...
                 </div>
               ) : (
-                <div className="flex items-center gap-2">
-                  <Zap className="w-5 h-5" />
-                  {isSignUp ? '계정 만들기' : '시작하기'}
-                </div>
+                isSignUp ? '계정 만들기' : '로그인'
               )}
             </Button>
 
             {/* Divider */}
             <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-white/20"></div>
+                <div className="w-full border-t border-gray-200"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-3 bg-transparent text-white/60 font-medium">또는</span>
+                <span className="px-3 bg-white text-gray-500 font-medium">또는</span>
               </div>
             </div>
 
@@ -211,7 +187,7 @@ export default function Login() {
               }}
               disabled={googleLoading || loading}
               variant="outline"
-              className="w-full h-14 bg-white/90 hover:bg-white border-0 text-gray-800 font-semibold rounded-xl shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02] backdrop-blur-sm"
+              className="w-full h-12 bg-white hover:bg-gray-50 border-2 border-gray-200 text-gray-800 font-semibold rounded-xl"
             >
               {googleLoading ? (
                 <div className="flex items-center gap-2">
@@ -245,22 +221,10 @@ export default function Login() {
           </form>
         </div>
 
-        {/* Features */}
-        <div className="mt-8 grid grid-cols-3 gap-4 animate-slide-up animation-delay-200">
-          {[
-            { icon: Sparkles, text: '자동 배정' },
-            { icon: TrendingUp, text: '통계 분석' },
-            { icon: Zap, text: '빠른 공유' },
-          ].map((feature, i) => (
-            <div
-              key={i}
-              className="glass-card rounded-2xl p-4 text-center hover:scale-105 transition-transform duration-300"
-            >
-              <feature.icon className="w-6 h-6 mx-auto mb-2 text-white" />
-              <p className="text-white/90 text-sm font-medium">{feature.text}</p>
-            </div>
-          ))}
-        </div>
+        {/* Footer */}
+        <p className="text-center text-sm text-gray-500 mt-6">
+          테니스 동아리를 위한 스케줄 관리 시스템
+        </p>
       </div>
     </div>
   );
