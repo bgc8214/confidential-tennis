@@ -143,7 +143,7 @@ export default function PublicSchedule() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
           <div className="flex justify-between items-center">
             <Link to="/" className="flex items-center gap-2 sm:gap-3">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-[#D4765A] to-[#2E7D4E] flex items-center justify-center shadow-lg">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-emerald-600 flex items-center justify-center shadow-lg">
                 <span className="text-xl sm:text-2xl">🎾</span>
               </div>
               <div>
@@ -230,7 +230,7 @@ export default function PublicSchedule() {
               <div key={matchNumber} className="space-y-4">
                 {/* 경기 번호 헤더 */}
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-[#D4765A] to-[#2E7D4E] rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                  <div className="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-lg">
                     {matchNumber}
                   </div>
                   <div className="flex-1">

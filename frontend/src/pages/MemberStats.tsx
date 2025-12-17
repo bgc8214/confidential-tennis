@@ -204,7 +204,7 @@ export default function MemberStats() {
                       className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center text-lg sm:text-xl font-bold flex-shrink-0 ${
                         index < 3
                           ? 'bg-white/20'
-                          : 'bg-gradient-to-br from-[#D4765A] to-[#2E7D4E] text-white'
+                          : 'bg-emerald-600 text-white'
                       }`}
                     >
                       {index < 3 ? (index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉') : index + 1}
@@ -254,7 +254,7 @@ export default function MemberStats() {
                           className={`h-full transition-all duration-500 ${
                             index < 3
                               ? 'bg-white'
-                              : 'bg-gradient-to-r from-[#D4765A] to-[#2E7D4E]'
+                              : 'bg-emerald-600'
                           }`}
                           style={{ width: `${stat.attendanceRate}%` }}
                         ></div>

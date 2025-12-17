@@ -320,7 +320,7 @@ export default function ScheduleGenerator() {
         <div className="flex gap-4">
           <button
             onClick={() => navigate('/schedule/new')}
-            className="px-6 py-3 bg-gradient-to-r from-[#D4765A] to-[#2E7D4E] text-white rounded-xl font-bold hover:shadow-lg transition-all"
+            className="px-6 py-3 bg-emerald-600 text-white rounded-xl font-bold hover:shadow-lg transition-all"
           >
             새 스케줄 만들기
           </button>
@@ -352,7 +352,7 @@ export default function ScheduleGenerator() {
         <div className="flex gap-4">
           <button
             onClick={() => navigate('/schedule/new')}
-            className="px-6 py-3 bg-gradient-to-r from-[#D4765A] to-[#2E7D4E] text-white rounded-xl font-bold hover:shadow-lg transition-all"
+            className="px-6 py-3 bg-emerald-600 text-white rounded-xl font-bold hover:shadow-lg transition-all"
           >
             새 스케줄 만들기
           </button>
@@ -502,7 +502,7 @@ export default function ScheduleGenerator() {
             >
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 gap-2">
                 <div className="flex items-center space-x-3 sm:space-x-4">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-[#D4765A] to-[#2E7D4E] rounded-lg sm:rounded-xl flex items-center justify-center text-white font-bold text-lg sm:text-xl shadow-lg">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-emerald-600 rounded-lg sm:rounded-xl flex items-center justify-center text-white font-bold text-lg sm:text-xl shadow-lg">
                     {matchNumber}
                   </div>
                   <div>
@@ -619,7 +619,7 @@ export default function ScheduleGenerator() {
             <button
               onClick={handleSave}
               disabled={isSaving}
-              className="flex-[2] min-w-0 sm:min-w-[200px] px-6 py-3 sm:px-8 sm:py-4 bg-gradient-to-r from-[#D4765A] to-[#2E7D4E] text-white rounded-lg sm:rounded-xl font-bold hover:shadow-2xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-xl hover:scale-105 flex items-center justify-center space-x-2 text-sm sm:text-base"
+              className="flex-[2] min-w-0 sm:min-w-[200px] px-6 py-3 sm:px-8 sm:py-4 bg-emerald-600 text-white rounded-lg sm:rounded-xl font-bold hover:shadow-2xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-xl hover:scale-105 flex items-center justify-center space-x-2 text-sm sm:text-base"
             >
               {isSaving ? (
                 <>

@@ -317,7 +317,7 @@ export default function ScheduleDetail() {
               <div className="flex gap-3 justify-center">
                 <Button
                   onClick={() => navigate(`/schedule/${scheduleId}/generate`)}
-                  className="bg-gradient-to-r from-[#D4765A] to-[#2E7D4E] text-white hover:shadow-lg"
+                  className="bg-emerald-600 text-white hover:shadow-lg"
                 >
                   <Edit className="w-4 h-4 mr-2" />
                   경기 생성하기
@@ -341,7 +341,7 @@ export default function ScheduleDetail() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-[#D4765A] to-[#2E7D4E] rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                  <div className="w-12 h-12 bg-emerald-600 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg">
                     {matchNumber}
                   </div>
                   <div>

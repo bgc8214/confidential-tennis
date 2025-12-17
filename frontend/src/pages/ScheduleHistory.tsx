@@ -210,7 +210,7 @@ export default function ScheduleHistory() {
                 </p>
                 <Button
                   onClick={() => navigate('/schedule/new')}
-                  className="bg-gradient-to-r from-[#D4765A] to-[#2E7D4E] hover:shadow-lg"
+                  className="bg-emerald-600 hover:shadow-lg"
                 >
                   새 스케줄 만들기
                 </Button>
@@ -229,7 +229,7 @@ export default function ScheduleHistory() {
                     <CardContent className="p-6">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-4 flex-1">
-                          <div className="w-16 h-16 bg-gradient-to-br from-[#D4765A] to-[#2E7D4E] rounded-2xl flex flex-col items-center justify-center text-white shadow-lg">
+                          <div className="w-16 h-16 bg-emerald-600 rounded-2xl flex flex-col items-center justify-center text-white shadow-lg">
                             <div className="text-xs font-medium">
                               {new Date(schedule.date).getMonth() + 1}월
                             </div>
