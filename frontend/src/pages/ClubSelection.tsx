@@ -132,7 +132,7 @@ export default function ClubSelection() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-[#2E7D4E] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <div className="w-12 h-12 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600">로딩 중...</p>
         </div>
       </div>
@@ -140,14 +140,14 @@ export default function ClubSelection() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12 px-4">
+    <div className="min-h-screen bg-gray-50 py-12 px-4">
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-8">
-          <div className="w-20 h-20 bg-gradient-to-br from-[#D4765A] to-[#2E7D4E] rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+          <div className="w-20 h-20 bg-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-md">
             <span className="text-4xl">🎾</span>
           </div>
           <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            테니스 동아리 스케줄 관리
+            CourtPlanner
           </h1>
           <p className="text-gray-600">
             {user?.email}님, 환영합니다!
@@ -189,8 +189,8 @@ export default function ClubSelection() {
                       key={club.id}
                       className={`p-4 rounded-xl border-2 transition-all cursor-pointer ${
                         isCurrent
-                          ? 'border-[#2E7D4E] bg-[#2E7D4E]/5 shadow-lg'
-                          : 'border-gray-200 hover:border-gray-300 bg-white'
+                          ? 'border-emerald-600 bg-emerald-50 shadow-md'
+                          : 'border-gray-200 hover:border-gray-300 bg-white hover:shadow-sm'
                       }`}
                       onClick={() => handleSelectClub(club)}
                     >
@@ -199,7 +199,7 @@ export default function ClubSelection() {
                           <h3 className="font-bold text-lg text-gray-900">
                             {club.name}
                             {isCurrent && (
-                              <span className="ml-2 text-sm text-[#2E7D4E]">✓ 현재</span>
+                              <span className="ml-2 text-sm text-emerald-600">✓ 현재</span>
                             )}
                           </h3>
                           {club.description && (
@@ -256,7 +256,7 @@ export default function ClubSelection() {
                             e.stopPropagation();
                             handleCopyCode(club.code);
                           }}
-                          className="text-xs text-[#2E7D4E] hover:underline flex items-center gap-1"
+                          className="text-xs text-emerald-600 hover:underline flex items-center gap-1"
                         >
                           {copiedCode === club.code ? (
                             <>
@@ -285,7 +285,7 @@ export default function ClubSelection() {
           <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
             <DialogTrigger asChild>
               <Button
-                className="h-auto py-6 bg-gradient-to-r from-[#D4765A] to-[#2E7D4E] hover:from-[#B85C3D] hover:to-[#1F5A35]"
+                className="h-auto py-6 bg-emerald-600 hover:bg-emerald-700"
               >
                 <Plus className="w-5 h-5 mr-2" />
                 새 클럽 만들기
