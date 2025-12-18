@@ -272,5 +272,20 @@ export const scheduleService = {
       .eq('schedule_id', scheduleId);
 
     if (error) throw error;
+  },
+
+  // 스케줄의 경기 전체 업데이트 (기존 삭제 후 새로 생성)
+  async updateMatches(scheduleId: number, matches: Array<Omit<Match, 'id' | 'created_at' | 'updated_at'>>): Promise<Match[]> {
+    // 1. 기존 경기 삭제
+    await this.deleteMatchesByScheduleId(scheduleId);
+
+    // 2. 새 경기 생성
+    const { data, error } = await supabase
+      .from('matches')
+      .insert(matches)
+      .select();
+
+    if (error) throw error;
+    return data || [];
   }
 };

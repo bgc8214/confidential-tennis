@@ -7,12 +7,16 @@ import type { Schedule } from '../types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Plus, Calendar, Clock, Users, ChevronRight, Trash2 } from 'lucide-react';
+import { useToast } from '../hooks/use-toast';
+import { useConfirm } from '../hooks/useConfirm';
 
 type StatusFilter = 'all' | 'planned' | 'in_progress' | 'completed' | 'cancelled';
 
 export default function ScheduleList() {
   const navigate = useNavigate();
   const { currentClub } = useClub();
+  const { toast } = useToast();
+  const { confirm, ConfirmDialog } = useConfirm();
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -48,15 +52,31 @@ export default function ScheduleList() {
   };
 
   const handleDelete = async (scheduleId: number, date: string) => {
-    if (!confirm(`${date} 스케줄을 삭제하시겠습니까?`)) return;
+    const confirmed = await confirm({
+      title: '스케줄 삭제',
+      description: `${date} 스케줄을 삭제하시겠습니까?`,
+      confirmText: '삭제',
+      cancelText: '취소',
+      confirmVariant: 'destructive',
+      icon: <Trash2 className="w-6 h-6 text-red-600" />
+    });
+
+    if (!confirmed) return;
 
     try {
       await scheduleService.delete(scheduleId);
-      alert('스케줄이 삭제되었습니다.');
+      toast({
+        title: '삭제 완료',
+        description: '스케줄이 성공적으로 삭제되었습니다.',
+      });
       loadSchedules();
     } catch (err) {
       console.error(err);
-      alert('스케줄 삭제에 실패했습니다.');
+      toast({
+        title: '삭제 실패',
+        description: '스케줄 삭제에 실패했습니다.',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -71,7 +91,11 @@ export default function ScheduleList() {
       }
     } catch (err) {
       console.error(err);
-      alert('스케줄을 불러오는데 실패했습니다.');
+      toast({
+        title: '불러오기 실패',
+        description: '스케줄을 불러오는데 실패했습니다.',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -308,6 +332,7 @@ export default function ScheduleList() {
           })}
         </div>
       )}
+      <ConfirmDialog />
     </div>
   );
 }

@@ -11,12 +11,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ArrowLeft, Shield, ShieldCheck, User, Crown, Search, UserPlus, Trash2 } from 'lucide-react';
 import { useToast } from '../hooks/use-toast';
+import { useConfirm } from '../hooks/useConfirm';
 
 export default function AdminClubMembers() {
   const { clubId } = useParams<{ clubId: string }>();
   const navigate = useNavigate();
   const { isSuperAdmin, loading: authLoading } = useIsSuperAdmin();
   const { toast } = useToast();
+  const { confirm, ConfirmDialog } = useConfirm();
   const [members, setMembers] = useState<ClubMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -49,7 +51,15 @@ export default function AdminClubMembers() {
   };
 
   const handleRoleChange = async (memberId: number, newRole: 'owner' | 'admin' | 'member') => {
-    if (!confirm(`정말 권한을 변경하시겠습니까?`)) return;
+    const confirmed = await confirm({
+      title: "권한 변경 확인",
+      description: "정말 권한을 변경하시겠습니까?",
+      confirmText: "변경",
+      cancelText: "취소",
+      confirmVariant: "default",
+    });
+
+    if (!confirmed) return;
 
     try {
       await clubMemberService.updateMemberRole(memberId, newRole);
@@ -133,7 +143,15 @@ export default function AdminClubMembers() {
   };
 
   const handleRemoveUser = async (memberId: number, userName: string) => {
-    if (!confirm(`정말 ${userName} 님을 클럽에서 제거하시겠습니까?`)) return;
+    const confirmed = await confirm({
+      title: "멤버 제거 확인",
+      description: `정말 ${userName} 님을 클럽에서 제거하시겠습니까?`,
+      confirmText: "제거",
+      cancelText: "취소",
+      confirmVariant: "destructive",
+    });
+
+    if (!confirmed) return;
 
     try {
       await adminService.removeUserFromClub(memberId);
@@ -355,6 +373,7 @@ export default function AdminClubMembers() {
           )}
         </CardContent>
       </Card>
+      <ConfirmDialog />
     </div>
   );
 }

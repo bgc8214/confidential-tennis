@@ -5,10 +5,12 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { KakaoInAppBrowserWarning, InAppBrowserWarning } from '../components/KakaoInAppBrowserWarning';
+import { useToast } from '../hooks/use-toast';
 
 export default function Login() {
   const navigate = useNavigate();
   const { signIn, signUp, signInWithGoogle } = useAuth();
+  const { toast } = useToast();
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -27,7 +29,10 @@ export default function Login() {
         await signUp(email, password, fullName);
         setIsSignUp(false);
         setError(null);
-        alert('회원가입이 완료되었습니다. 로그인해주세요.');
+        toast({
+          title: '회원가입 완료',
+          description: '로그인해주세요.',
+        });
       } else {
         await signIn(email, password);
         navigate('/');

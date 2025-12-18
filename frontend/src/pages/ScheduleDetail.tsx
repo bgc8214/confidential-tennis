@@ -1,19 +1,34 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import html2canvas from 'html2canvas';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import type { DragEndEvent } from '@dnd-kit/core';
+import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { scheduleService } from '../services/scheduleService';
 import { updateExpiredSchedules, updatePastSchedules } from '../utils/scheduleStatusUpdater';
 import type { Schedule, Match, Attendance, GeneratedMatch } from '../types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Link as LinkIcon, Edit, Trash2, Download } from 'lucide-react';
+import { ArrowLeft, Link as LinkIcon, Edit, Trash2, Download, Save, X } from 'lucide-react';
 import CompactScheduleView from '../components/CompactScheduleView';
+import DraggableMatchCard from '../components/DraggableMatchCard';
 import { useClub } from '../contexts/ClubContext';
+import { useToast } from '../hooks/use-toast';
+import { useConfirm } from '../hooks/useConfirm';
 
 export default function ScheduleDetail() {
   const { scheduleId } = useParams<{ scheduleId: string }>();
   const navigate = useNavigate();
   const { currentClub } = useClub();
+  const { toast } = useToast();
+  const { confirm, ConfirmDialog } = useConfirm();
   const [schedule, setSchedule] = useState<Schedule | null>(null);
   const [matches, setMatches] = useState<Match[]>([]);
   const [attendances, setAttendances] = useState<Attendance[]>([]);
@@ -21,6 +36,24 @@ export default function ScheduleDetail() {
   const [error, setError] = useState<string | null>(null);
   const [publicLink, setPublicLink] = useState<string | null>(null);
   const compactViewRef = useRef<HTMLDivElement>(null);
+
+  // 편집 모드 상태
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editedMatches, setEditedMatches] = useState<GeneratedMatch[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // @dnd-kit 센서 설정
+  const pointerSensor = useSensor(PointerSensor, {
+    activationConstraint: {
+      distance: 5,
+    },
+  });
+
+  const keyboardSensor = useSensor(KeyboardSensor, {
+    coordinateGetter: sortableKeyboardCoordinates,
+  });
+
+  const sensors = useSensors(pointerSensor, keyboardSensor);
 
   useEffect(() => {
     if (scheduleId && currentClub) {
@@ -118,9 +151,162 @@ export default function ScheduleDetail() {
       link.download = `테니스-스케줄-${dateStr}.png`;
       link.href = canvas.toDataURL('image/png');
       link.click();
+      toast({
+        title: '이미지 저장 완료',
+        description: '스케줄 이미지가 다운로드되었습니다.',
+      });
     } catch (err) {
       console.error('이미지 다운로드 실패:', err);
-      alert('이미지 다운로드에 실패했습니다.');
+      toast({
+        title: '이미지 다운로드 실패',
+        description: '이미지 다운로드에 실패했습니다.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  // 편집 모드 시작
+  const handleStartEdit = () => {
+    // 현재 matches를 GeneratedMatch 형식으로 변환
+    const generatedMatches: GeneratedMatch[] = [];
+
+    // 경기 번호별로 그룹화
+    for (let matchNumber = 1; matchNumber <= 6; matchNumber++) {
+      const courtAMatch = matches.find(m => m.match_number === matchNumber && m.court === 'A');
+      const courtBMatch = matches.find(m => m.match_number === matchNumber && m.court === 'B');
+
+      if (courtAMatch) {
+        generatedMatches.push({
+          match_number: courtAMatch.match_number,
+          court: 'A',
+          start_time: courtAMatch.start_time,
+          match_type: courtAMatch.match_type,
+          team1: [courtAMatch.player1, courtAMatch.player2].filter((p): p is Attendance => !!p) as [Attendance, Attendance],
+          team2: [courtAMatch.player3, courtAMatch.player4].filter((p): p is Attendance => !!p) as [Attendance, Attendance],
+        });
+      }
+
+      if (courtBMatch) {
+        generatedMatches.push({
+          match_number: courtBMatch.match_number,
+          court: 'B',
+          start_time: courtBMatch.start_time,
+          match_type: courtBMatch.match_type,
+          team1: [courtBMatch.player1, courtBMatch.player2].filter((p): p is Attendance => !!p) as [Attendance, Attendance],
+          team2: [courtBMatch.player3, courtBMatch.player4].filter((p): p is Attendance => !!p) as [Attendance, Attendance],
+        });
+      }
+    }
+
+    setEditedMatches(generatedMatches);
+    setIsEditMode(true);
+  };
+
+  // 편집 모드 취소
+  const handleCancelEdit = () => {
+    setIsEditMode(false);
+    setEditedMatches([]);
+  };
+
+  // 드래그 앤 드롭 처리
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) return;
+
+    const activeId = String(active.id);
+    const overId = String(over.id);
+
+    // Parse IDs: format is "match-{matchIdx}-{court}-player-{playerIdx}"
+    const parseId = (id: string) => {
+      const parts = id.split('-');
+      return {
+        matchIndex: parseInt(parts[1]),
+        court: parts[2],
+        playerIndex: parseInt(parts[4])
+      };
+    };
+
+    const activeInfo = parseId(activeId);
+    const overInfo = parseId(overId);
+
+    setEditedMatches(prevMatches => {
+      const newMatches = [...prevMatches];
+
+      const activeMatch = newMatches[activeInfo.matchIndex];
+      const overMatch = newMatches[overInfo.matchIndex];
+
+      if (!activeMatch || !overMatch) return prevMatches;
+
+      // Get players from teams
+      const getPlayer = (match: GeneratedMatch, playerIdx: number) => {
+        if (playerIdx < 2) return match.team1[playerIdx];
+        return match.team2[playerIdx - 2];
+      };
+
+      const setPlayer = (match: GeneratedMatch, playerIdx: number, player: Attendance) => {
+        const newMatch = { ...match };
+        if (playerIdx < 2) {
+          newMatch.team1 = [...match.team1];
+          newMatch.team1[playerIdx] = player;
+        } else {
+          newMatch.team2 = [...match.team2];
+          newMatch.team2[playerIdx - 2] = player;
+        }
+        return newMatch;
+      };
+
+      const activePlayer = getPlayer(activeMatch, activeInfo.playerIndex);
+      const overPlayer = getPlayer(overMatch, overInfo.playerIndex);
+
+      // Swap players
+      newMatches[activeInfo.matchIndex] = setPlayer(activeMatch, activeInfo.playerIndex, overPlayer);
+      newMatches[overInfo.matchIndex] = setPlayer(overMatch, overInfo.playerIndex, activePlayer);
+
+      return newMatches;
+    });
+  };
+
+  // 변경사항 저장
+  const handleSaveEdit = async () => {
+    if (!scheduleId) return;
+
+    try {
+      setIsSaving(true);
+
+      // GeneratedMatch를 DB 형식으로 변환
+      const dbMatches = editedMatches.map(match => ({
+        schedule_id: parseInt(scheduleId),
+        match_number: match.match_number,
+        court: match.court,
+        start_time: match.start_time,
+        match_type: match.match_type,
+        player1_id: match.team1[0]?.id,
+        player2_id: match.team1[1]?.id,
+        player3_id: match.team2[0]?.id,
+        player4_id: match.team2[1]?.id,
+      }));
+
+      // 기존 경기 삭제 후 새로운 경기 저장
+      await scheduleService.updateMatches(parseInt(scheduleId), dbMatches);
+
+      toast({
+        title: '수정 완료',
+        description: '경기 수정이 완료되었습니다.',
+      });
+      setIsEditMode(false);
+
+      // 데이터 새로고침
+      await loadScheduleDetail();
+    } catch (err) {
+      console.error('경기 저장 실패:', err);
+      toast({
+        title: '저장 실패',
+        description: '경기 저장에 실패했습니다.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -191,7 +377,10 @@ export default function ScheduleDetail() {
               onClick={async () => {
                 const publicUrl = `${window.location.origin}/public/schedule/${publicLink}`;
                 await navigator.clipboard.writeText(publicUrl);
-                alert('공개 링크가 복사되었습니다!');
+                toast({
+                  title: '링크 복사 완료',
+                  description: '공개 링크가 클립보드에 복사되었습니다.',
+                });
               }}
               variant="outline"
               size="sm"
@@ -204,24 +393,38 @@ export default function ScheduleDetail() {
             <Button
               onClick={async () => {
                 if (!scheduleId) {
-                  alert('스케줄 ID가 없습니다.');
+                  toast({
+                    title: '오류',
+                    description: '스케줄 ID가 없습니다.',
+                    variant: 'destructive',
+                  });
                   return;
                 }
                 try {
                   const id = parseInt(scheduleId);
-                  console.log('공개 링크 생성 시도 - scheduleId:', scheduleId, 'parsed id:', id);
                   if (isNaN(id) || id <= 0) {
-                    alert('유효하지 않은 스케줄 ID입니다.');
+                    toast({
+                      title: '오류',
+                      description: '유효하지 않은 스케줄 ID입니다.',
+                      variant: 'destructive',
+                    });
                     return;
                   }
                   const newPublicLink = await scheduleService.generatePublicLink(id);
                   setPublicLink(newPublicLink);
                   const publicUrl = `${window.location.origin}/public/schedule/${newPublicLink}`;
                   await navigator.clipboard.writeText(publicUrl);
-                  alert('공개 링크가 생성되고 복사되었습니다!');
+                  toast({
+                    title: '링크 생성 완료',
+                    description: '공개 링크가 생성되고 클립보드에 복사되었습니다.',
+                  });
                 } catch (err: any) {
                   console.error('공개 링크 생성 실패:', err);
-                  alert(`공개 링크 생성에 실패했습니다: ${err?.message || '알 수 없는 오류'}`);
+                  toast({
+                    title: '링크 생성 실패',
+                    description: err?.message || '공개 링크 생성에 실패했습니다.',
+                    variant: 'destructive',
+                  });
                 }
               }}
               variant="outline"
@@ -244,28 +447,86 @@ export default function ScheduleDetail() {
             이미지 저장
           </Button>
 
-          {/* 수정 버튼 (참석자/제약조건 수정 페이지로 이동) */}
-          <Button
-            onClick={() => navigate(`/schedule/${scheduleId}/edit`)}
-            variant="outline"
-            size="sm"
-            className="border-blue-300 text-blue-700 hover:bg-blue-50"
-          >
-            <Edit className="w-4 h-4 mr-2" />
-            수정
-          </Button>
+          {/* 편집 모드 버튼 */}
+          {!isEditMode ? (
+            <>
+              <Button
+                onClick={handleStartEdit}
+                variant="outline"
+                size="sm"
+                className="border-blue-300 text-blue-700 hover:bg-blue-50"
+                disabled={matches.length === 0}
+              >
+                <Edit className="w-4 h-4 mr-2" />
+                경기 수정
+              </Button>
+              <Button
+                onClick={() => navigate(`/schedule/${scheduleId}/edit`)}
+                variant="outline"
+                size="sm"
+                className="border-indigo-300 text-indigo-700 hover:bg-indigo-50"
+              >
+                <Edit className="w-4 h-4 mr-2" />
+                설정 수정
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                onClick={handleSaveEdit}
+                variant="default"
+                size="sm"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                disabled={isSaving}
+              >
+                <Save className="w-4 h-4 mr-2" />
+                {isSaving ? '저장 중...' : '저장'}
+              </Button>
+              <Button
+                onClick={handleCancelEdit}
+                variant="outline"
+                size="sm"
+                className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                disabled={isSaving}
+              >
+                <X className="w-4 h-4 mr-2" />
+                취소
+              </Button>
+            </>
+          )}
           
           {/* 삭제 버튼 */}
           <Button
             onClick={async () => {
-              if (!confirm('이 스케줄을 삭제하시겠습니까?')) return;
+              const confirmed = await confirm({
+                title: '스케줄 삭제',
+                description: '이 스케줄을 삭제하시겠습니까? 삭제된 스케줄은 복구할 수 없습니다.',
+                confirmText: '삭제',
+                cancelText: '취소',
+                confirmVariant: 'destructive',
+                icon: (
+                  <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto">
+                    <Trash2 className="w-6 h-6 text-red-600" />
+                  </div>
+                ),
+              });
+
+              if (!confirmed) return;
+
               try {
                 await scheduleService.delete(parseInt(scheduleId!));
-                alert('스케줄이 삭제되었습니다.');
+                toast({
+                  title: '삭제 완료',
+                  description: '스케줄이 삭제되었습니다.',
+                });
                 navigate('/schedules');
               } catch (err) {
                 console.error(err);
-                alert('스케줄 삭제에 실패했습니다.');
+                toast({
+                  title: '삭제 실패',
+                  description: '스케줄 삭제에 실패했습니다.',
+                  variant: 'destructive',
+                });
               }
             }}
             variant="outline"
@@ -303,6 +564,23 @@ export default function ScheduleDetail() {
         </Card>
       </div>
 
+      {/* 편집 모드 안내 */}
+      {isEditMode && (
+        <Card className="border-2 border-blue-200 bg-blue-50">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="text-2xl">✏️</div>
+              <div>
+                <h3 className="font-bold text-blue-900">편집 모드</h3>
+                <p className="text-sm text-blue-700">
+                  선수를 드래그하여 경기 배정을 수정할 수 있습니다. 완료 후 저장 버튼을 눌러주세요.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Matches List */}
       <div className="space-y-8">
         {matches.length === 0 ? (
@@ -332,7 +610,48 @@ export default function ScheduleDetail() {
               </div>
             </CardContent>
           </Card>
+        ) : isEditMode ? (
+          // 편집 모드: 드래그 가능한 카드
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <div className="grid gap-6">
+              {editedMatches
+                .reduce((groups: GeneratedMatch[][], match) => {
+                  const groupIdx = match.match_number - 1;
+                  if (!groups[groupIdx]) groups[groupIdx] = [];
+                  groups[groupIdx].push(match);
+                  return groups;
+                }, [])
+                .map((matchGroup, idx) => (
+                  <div key={idx} className="space-y-4">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-12 h-12 bg-emerald-600 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                        {idx + 1}
+                      </div>
+                      <h3 className="text-2xl font-bold">경기 {idx + 1}</h3>
+                      {matchGroup[0]?.start_time && (
+                        <span className="text-gray-500">{matchGroup[0].start_time} - 30분</span>
+                      )}
+                    </div>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      {matchGroup.map(match => {
+                        const matchIndex = editedMatches.findIndex(
+                          m => m.match_number === match.match_number && m.court === match.court
+                        );
+                        return (
+                          <DraggableMatchCard
+                            key={`${match.match_number}-${match.court}`}
+                            match={match}
+                            matchIndex={matchIndex}
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+            </div>
+          </DndContext>
         ) : (
+          // 일반 모드: 기존 뷰
           matchesByNumber.map(({ matchNumber, courtA, courtB }, idx) => (
           <Card
             key={matchNumber}
@@ -497,6 +816,9 @@ export default function ScheduleDetail() {
           />
         )}
       </div>
+
+      {/* Confirm Dialog */}
+      <ConfirmDialog />
     </div>
   );
 }

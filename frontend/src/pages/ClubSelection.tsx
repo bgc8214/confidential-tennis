@@ -9,11 +9,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '../components/ui/dropdown-menu';
 import { Plus, Users, Copy, Check, MoreVertical, Edit, Trash2, LogOut } from 'lucide-react';
+import { useToast } from '../hooks/use-toast';
+import { useConfirm } from '../hooks/useConfirm';
 
 export default function ClubSelection() {
   const navigate = useNavigate();
   const { userClubs, currentClub, setCurrentClub, createClub, joinClub, updateClub, deleteClub, leaveClub, loading } = useClub();
   const { user } = useAuth();
+  const { toast } = useToast();
+  const { confirm, ConfirmDialog } = useConfirm();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showJoinDialog, setShowJoinDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
@@ -103,28 +107,54 @@ export default function ClubSelection() {
   };
 
   const handleDeleteClub = async (club: any) => {
-    if (!confirm(`정말로 "${club.name}" 클럽을 삭제하시겠습니까?\n\n모든 회원, 스케줄, 경기 데이터가 삭제됩니다.`)) {
+    const confirmed = await confirm({
+      title: '클럽 삭제',
+      description: `정말로 "${club.name}" 클럽을 삭제하시겠습니까?\n\n모든 회원, 스케줄, 경기 데이터가 삭제됩니다.`,
+      confirmVariant: 'destructive',
+    });
+
+    if (!confirmed) {
       return;
     }
 
     try {
       await deleteClub(club.id);
-      alert('클럽이 삭제되었습니다.');
+      toast({
+        title: '클럽 삭제 완료',
+        description: '클럽이 성공적으로 삭제되었습니다.',
+      });
     } catch (err: any) {
-      alert(err.message || '클럽 삭제에 실패했습니다.');
+      toast({
+        title: '클럽 삭제 실패',
+        description: err.message || '클럽 삭제에 실패했습니다.',
+        variant: 'destructive',
+      });
     }
   };
 
   const handleLeaveClub = async (club: any) => {
-    if (!confirm(`정말로 "${club.name}" 클럽에서 탈퇴하시겠습니까?`)) {
+    const confirmed = await confirm({
+      title: '클럽 탈퇴',
+      description: `정말로 "${club.name}" 클럽에서 탈퇴하시겠습니까?`,
+      confirmVariant: 'destructive',
+    });
+
+    if (!confirmed) {
       return;
     }
 
     try {
       await leaveClub(club.id);
-      alert('클럽에서 탈퇴했습니다.');
+      toast({
+        title: '클럽 탈퇴 완료',
+        description: '클럽에서 성공적으로 탈퇴했습니다.',
+      });
     } catch (err: any) {
-      alert(err.message || '클럽 탈퇴에 실패했습니다.');
+      toast({
+        title: '클럽 탈퇴 실패',
+        description: err.message || '클럽 탈퇴에 실패했습니다.',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -456,6 +486,7 @@ export default function ClubSelection() {
           </DialogContent>
         </Dialog>
       </div>
+      <ConfirmDialog />
     </div>
   );
 }

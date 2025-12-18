@@ -7,9 +7,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { UserPlus, Pencil, Trash2, Users } from 'lucide-react';
 import { MemberForm } from '@/components/MemberForm';
+import { useToast } from '../hooks/use-toast';
+import { useConfirm } from '../hooks/useConfirm';
 
 export default function MemberManagement() {
   const { currentClub } = useClub();
+  const { toast } = useToast();
+  const { confirm, ConfirmDialog } = useConfirm();
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -45,14 +49,35 @@ export default function MemberManagement() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('정말 이 회원을 삭제하시겠습니까?')) return;
+    const confirmed = await confirm({
+      title: '회원 삭제',
+      description: '정말 이 회원을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.',
+      confirmText: '삭제',
+      cancelText: '취소',
+      confirmVariant: 'destructive',
+      icon: (
+        <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto">
+          <Trash2 className="w-6 h-6 text-red-600" />
+        </div>
+      ),
+    });
+
+    if (!confirmed) return;
 
     try {
       await memberService.delete(id);
+      toast({
+        title: '삭제 완료',
+        description: '회원이 삭제되었습니다.',
+      });
       await loadMembers();
     } catch (err) {
-      setError('회원 삭제에 실패했습니다.');
       console.error(err);
+      toast({
+        title: '삭제 실패',
+        description: '회원 삭제에 실패했습니다.',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -216,6 +241,9 @@ export default function MemberManagement() {
         onSuccess={handleFormSuccess}
         onCancel={handleFormCancel}
       />
+
+      {/* Confirm Dialog */}
+      <ConfirmDialog />
     </div>
   );
 }
