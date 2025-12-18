@@ -304,60 +304,68 @@ export default function ScheduleCreation() {
 
       await scheduleService.addAttendances(schedule.id, attendanceData);
 
-      // 3. 제약조건 저장
+      // 3. 제약조건 저장 (게스트는 DB에 저장하지 않음, 음수 ID 필터링)
       const constraintPromises = [];
 
-      // 마지막 경기 제외
+      // 마지막 경기 제외 (게스트 제외)
       for (const memberId of constraints.excludeLastMatch) {
-        constraintPromises.push(
-          scheduleService.addConstraint({
-            schedule_id: schedule.id,
-            constraint_type: 'exclude_last_match',
-            member_id_1: memberId,
-            member_id_2: null,
-            match_number: null
-          })
-        );
-      }
-
-      // 파트너 페어
-      for (const [member1, member2] of constraints.partnerPairs) {
-        constraintPromises.push(
-          scheduleService.addConstraint({
-            schedule_id: schedule.id,
-            constraint_type: 'partner_pair',
-            member_id_1: member1,
-            member_id_2: member2,
-            match_number: null
-          })
-        );
-      }
-
-      // 특정 경기 제외
-      for (const { memberId, matchNumber } of constraints.excludeMatches) {
-        constraintPromises.push(
-          scheduleService.addConstraint({
-            schedule_id: schedule.id,
-            constraint_type: 'exclude_match',
-            member_id_1: memberId,
-            member_id_2: null,
-            match_number: matchNumber
-          })
-        );
-      }
-
-      // 개인별 경기 수 설정
-      if (constraints.matchCounts) {
-        for (const { memberId, count } of constraints.matchCounts) {
+        if (memberId > 0) { // 양수 ID만 (회원만)
           constraintPromises.push(
             scheduleService.addConstraint({
               schedule_id: schedule.id,
-              constraint_type: 'match_count',
+              constraint_type: 'exclude_last_match',
               member_id_1: memberId,
               member_id_2: null,
-              match_number: count // match_number 필드에 경기 수 저장
+              match_number: null
             })
           );
+        }
+      }
+
+      // 파트너 페어 (게스트 제외)
+      for (const [member1, member2] of constraints.partnerPairs) {
+        if (member1 > 0 && member2 > 0) { // 둘 다 양수 ID일 때만 (회원끼리만)
+          constraintPromises.push(
+            scheduleService.addConstraint({
+              schedule_id: schedule.id,
+              constraint_type: 'partner_pair',
+              member_id_1: member1,
+              member_id_2: member2,
+              match_number: null
+            })
+          );
+        }
+      }
+
+      // 특정 경기 제외 (게스트 제외)
+      for (const { memberId, matchNumber } of constraints.excludeMatches) {
+        if (memberId > 0) { // 양수 ID만 (회원만)
+          constraintPromises.push(
+            scheduleService.addConstraint({
+              schedule_id: schedule.id,
+              constraint_type: 'exclude_match',
+              member_id_1: memberId,
+              member_id_2: null,
+              match_number: matchNumber
+            })
+          );
+        }
+      }
+
+      // 개인별 경기 수 설정 (게스트 제외)
+      if (constraints.matchCounts) {
+        for (const { memberId, count } of constraints.matchCounts) {
+          if (memberId > 0) { // 양수 ID만 (회원만)
+            constraintPromises.push(
+              scheduleService.addConstraint({
+                schedule_id: schedule.id,
+                constraint_type: 'match_count',
+                member_id_1: memberId,
+                member_id_2: null,
+                match_number: count // match_number 필드에 경기 수 저장
+              })
+            );
+          }
         }
       }
 
