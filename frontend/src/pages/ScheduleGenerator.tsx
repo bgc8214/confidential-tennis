@@ -18,12 +18,15 @@ import { generateSchedule, convertMatchesToDbFormat } from '../utils/scheduleGen
 import type { Attendance, GeneratedMatch } from '../types';
 import DraggableMatchCard from '../components/DraggableMatchCard';
 import CompactScheduleView from '../components/CompactScheduleView';
+import { ActionChoiceDialog } from '../components/ui/confirm-dialog';
 import { useClub } from '../contexts/ClubContext';
+import { useToast } from '../hooks/use-toast';
 
 export default function ScheduleGenerator() {
   const { scheduleId } = useParams<{ scheduleId: string }>();
   const navigate = useNavigate();
   const { currentClub } = useClub();
+  const { toast } = useToast();
   const [attendances, setAttendances] = useState<Attendance[]>([]);
   const [matches, setMatches] = useState<GeneratedMatch[]>([]);
   const [schedule, setSchedule] = useState<any>(null);
@@ -33,6 +36,7 @@ export default function ScheduleGenerator() {
   const [publicLink, setPublicLink] = useState<string | null>(null);
   const scheduleRef = useRef<HTMLDivElement>(null);
   const compactViewRef = useRef<HTMLDivElement>(null);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
 
   // @dnd-kit 센서 설정 (React 18과 호환)
   // 모바일 터치 지원: distance를 작게 설정하여 터치 반응성 향상
@@ -214,9 +218,17 @@ export default function ScheduleGenerator() {
       link.download = `테니스-스케줄-${dateStr}.png`;
       link.href = canvas.toDataURL('image/png');
       link.click();
+      toast({
+        title: '이미지 저장 완료',
+        description: '스케줄 이미지가 다운로드되었습니다.',
+      });
     } catch (err) {
       console.error('이미지 다운로드 실패:', err);
-      alert('이미지 다운로드에 실패했습니다.');
+      toast({
+        title: '다운로드 실패',
+        description: '이미지 다운로드에 실패했습니다.',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -266,30 +278,26 @@ export default function ScheduleGenerator() {
       const dbMatches = convertMatchesToDbFormat(matches, id);
       await scheduleService.addMatches(dbMatches);
 
-      alert('스케줄이 저장되었습니다!');
+      toast({
+        title: '저장 완료',
+        description: '스케줄이 저장되었습니다!',
+      });
       navigate('/');
     } catch (err) {
       setError('스케줄 저장에 실패했습니다.');
       console.error(err);
+      toast({
+        title: '저장 실패',
+        description: '스케줄 저장에 실패했습니다.',
+        variant: 'destructive',
+      });
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleCancel = async () => {
-    // 사용자에게 선택 옵션 제공
-    const deleteSchedule = window.confirm(
-      '이전 단계로 돌아가시겠습니까?\n\n확인: 설정을 수정하고 다시 생성\n취소: 홈으로 돌아가기'
-    );
-
-    if (deleteSchedule) {
-      // 이전 단계(스케줄 생성 페이지)로 돌아가기
-      // scheduleId를 포함하여 수정 모드로 돌아감
-      navigate(`/schedule/${scheduleId}/edit`);
-    } else {
-      // 홈으로 이동
-      navigate('/');
-    }
+  const handleCancel = () => {
+    setShowCancelDialog(true);
   };
 
   if (loading) {
@@ -392,7 +400,10 @@ export default function ScheduleGenerator() {
                   onClick={async () => {
                     const publicUrl = `${window.location.origin}/public/schedule/${publicLink}`;
                     await navigator.clipboard.writeText(publicUrl);
-                    alert('공개 링크가 복사되었습니다!');
+                    toast({
+                      title: '링크 복사 완료',
+                      description: '공개 링크가 클립보드에 복사되었습니다.',
+                    });
                   }}
                   className="text-purple-600 hover:text-purple-800 p-1 hover:bg-purple-200 rounded transition-colors"
                   title="공개 링크 복사"
@@ -406,21 +417,36 @@ export default function ScheduleGenerator() {
               <button
                 onClick={async () => {
                   if (!scheduleId) {
-                    alert('스케줄 ID가 없습니다.');
+                    toast({
+                      title: '오류',
+                      description: '스케줄 ID가 없습니다.',
+                      variant: 'destructive',
+                    });
                     return;
                   }
                   try {
                     const id = parseInt(scheduleId);
                     if (isNaN(id)) {
-                      alert('유효하지 않은 스케줄 ID입니다.');
+                      toast({
+                        title: '오류',
+                        description: '유효하지 않은 스케줄 ID입니다.',
+                        variant: 'destructive',
+                      });
                       return;
                     }
                     const newPublicLink = await scheduleService.generatePublicLink(id);
                     setPublicLink(newPublicLink);
-                    alert('공개 링크가 생성되었습니다!');
+                    toast({
+                      title: '링크 생성 완료',
+                      description: '공개 링크가 생성되었습니다!',
+                    });
                   } catch (err) {
                     console.error('공개 링크 생성 실패:', err);
-                    alert('공개 링크 생성에 실패했습니다.');
+                    toast({
+                      title: '생성 실패',
+                      description: '공개 링크 생성에 실패했습니다.',
+                      variant: 'destructive',
+                    });
                   }
                 }}
                 className="px-3 py-1.5 bg-purple-500 text-white rounded-lg text-sm font-medium hover:bg-purple-600 transition-colors shadow-md flex items-center gap-1.5"
@@ -642,9 +668,9 @@ export default function ScheduleGenerator() {
               className="flex-1 min-w-0 sm:min-w-[140px] px-4 py-3 sm:px-6 sm:py-4 bg-white border-2 border-gray-300 text-gray-700 rounded-lg sm:rounded-xl font-bold hover:bg-gray-50 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg flex items-center justify-center space-x-2 text-sm sm:text-base"
             >
               <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
-              <span>이전</span>
+              <span>취소</span>
             </button>
           </div>
         </div>
@@ -662,6 +688,50 @@ export default function ScheduleGenerator() {
           />
         )}
       </div>
+
+      {/* 취소 다이얼로그 */}
+      <ActionChoiceDialog
+        open={showCancelDialog}
+        onOpenChange={setShowCancelDialog}
+        title="어떻게 하시겠습니까?"
+        description="생성된 경기 스케줄을 저장하지 않고 나가시겠습니까?"
+        choices={[
+          {
+            label: '설정 수정하기',
+            description: '참석자나 제약조건을 변경하고 다시 생성합니다',
+            icon: (
+              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            ),
+            variant: 'outline',
+            onClick: () => navigate(`/schedule/${scheduleId}/edit`),
+          },
+          {
+            label: '홈으로 돌아가기',
+            description: '스케줄을 저장하지 않고 홈 화면으로 이동합니다',
+            icon: (
+              <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+              </svg>
+            ),
+            variant: 'outline',
+            onClick: () => navigate('/'),
+          },
+          {
+            label: '계속 편집하기',
+            description: '이 화면에 머물러 경기를 계속 조정합니다',
+            icon: (
+              <svg className="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 15l-3-3m0 0l3-3m-3 3h8M3 12a9 9 0 1118 0 9 9 0 01-18 0z" />
+              </svg>
+            ),
+            variant: 'default',
+            onClick: () => {}, // 다이얼로그만 닫힘
+          },
+        ]}
+      />
     </div>
   );
 }

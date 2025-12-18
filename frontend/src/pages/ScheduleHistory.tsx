@@ -6,10 +6,14 @@ import type { Schedule } from '../types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Trash2, Link as LinkIcon, Edit } from 'lucide-react';
+import { useToast } from '../hooks/use-toast';
+import { useConfirm } from '../hooks/useConfirm';
 
 export default function ScheduleHistory() {
   const navigate = useNavigate();
   const { currentClub } = useClub();
+  const { toast } = useToast();
+  const { confirm, ConfirmDialog } = useConfirm();
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -71,7 +75,7 @@ export default function ScheduleHistory() {
     if (e && (e.target as HTMLElement).closest('button')) {
       return;
     }
-    
+
     try {
       // 해당 스케줄의 경기 데이터 확인
       const matches = await scheduleService.getMatches(schedule.id);
@@ -85,39 +89,64 @@ export default function ScheduleHistory() {
       }
     } catch (err) {
       console.error(err);
-      alert('스케줄을 불러오는데 실패했습니다.');
+      toast({
+        title: '불러오기 실패',
+        description: '스케줄을 불러오는데 실패했습니다.',
+        variant: 'destructive',
+      });
     }
   };
 
   const handleDelete = async (schedule: Schedule, e: React.MouseEvent) => {
     e.stopPropagation(); // 카드 클릭 이벤트 방지
-    
-    if (!confirm(`${formatDate(schedule.date)} 스케줄을 삭제하시겠습니까?`)) {
-      return;
-    }
+
+    const confirmed = await confirm({
+      title: '스케줄 삭제',
+      description: `${formatDate(schedule.date)} 스케줄을 삭제하시겠습니까?`,
+      confirmText: '삭제',
+      cancelText: '취소',
+      confirmVariant: 'destructive',
+      icon: <Trash2 className="w-6 h-6 text-red-600" />
+    });
+
+    if (!confirmed) return;
 
     try {
       await scheduleService.delete(schedule.id);
-      alert('스케줄이 삭제되었습니다.');
+      toast({
+        title: '삭제 완료',
+        description: '스케줄이 성공적으로 삭제되었습니다.',
+      });
       loadSchedules();
     } catch (err) {
       console.error(err);
-      alert('스케줄 삭제에 실패했습니다.');
+      toast({
+        title: '삭제 실패',
+        description: '스케줄 삭제에 실패했습니다.',
+        variant: 'destructive',
+      });
     }
   };
 
   const handleGeneratePublicLink = async (schedule: Schedule, e: React.MouseEvent) => {
     e.stopPropagation(); // 카드 클릭 이벤트 방지
-    
+
     try {
       const publicLink = await scheduleService.generatePublicLink(schedule.id);
       const publicUrl = `${window.location.origin}/public/schedule/${publicLink}`;
       await navigator.clipboard.writeText(publicUrl);
-      alert('공개 링크가 생성되고 복사되었습니다!');
+      toast({
+        title: '링크 생성 완료',
+        description: '공개 링크가 생성되고 클립보드에 복사되었습니다.',
+      });
       loadSchedules(); // 목록 새로고침
     } catch (err) {
       console.error(err);
-      alert('공개 링크 생성에 실패했습니다.');
+      toast({
+        title: '링크 생성 실패',
+        description: '공개 링크 생성에 실패했습니다.',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -281,7 +310,10 @@ export default function ScheduleHistory() {
                                 e.stopPropagation();
                                 const publicUrl = `${window.location.origin}/public/schedule/${schedule.public_link}`;
                                 await navigator.clipboard.writeText(publicUrl);
-                                alert('공개 링크가 복사되었습니다!');
+                                toast({
+                                  title: '복사 완료',
+                                  description: '공개 링크가 클립보드에 복사되었습니다.',
+                                });
                               }}
                               variant="outline"
                               size="sm"
@@ -353,6 +385,7 @@ export default function ScheduleHistory() {
           </CardContent>
         </Card>
       )}
+      <ConfirmDialog />
     </div>
   );
 }

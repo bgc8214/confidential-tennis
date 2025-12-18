@@ -8,10 +8,12 @@ import { Button } from '../components/ui/button';
 import { ArrowLeft, Calendar, Clock, Users, LogIn, Download } from 'lucide-react';
 import MatchCard from '../components/MatchCard';
 import CompactScheduleView from '../components/CompactScheduleView';
+import { useToast } from '../hooks/use-toast';
 
 export default function PublicSchedule() {
   const { publicLink } = useParams<{ publicLink: string }>();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [schedule, setSchedule] = useState<Schedule | null>(null);
   const [matches, setMatches] = useState<Match[]>([]);
   const [attendances, setAttendances] = useState<Attendance[]>([]);
@@ -102,7 +104,11 @@ export default function PublicSchedule() {
       link.click();
     } catch (err) {
       console.error('이미지 다운로드 실패:', err);
-      alert('이미지 다운로드에 실패했습니다.');
+      toast({
+        variant: 'destructive',
+        title: '다운로드 실패',
+        description: '이미지 다운로드에 실패했습니다.',
+      });
     }
   };
 

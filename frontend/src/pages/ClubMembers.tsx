@@ -8,10 +8,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Shield, ShieldCheck, User, Crown } from 'lucide-react';
+import { useToast } from '../hooks/use-toast';
+import { useConfirm } from '../hooks/useConfirm';
 
 export default function ClubMembers() {
   const { currentClub } = useClub();
   const { canManageRoles } = useClubPermissions();
+  const { toast } = useToast();
+  const { confirm, ConfirmDialog } = useConfirm();
   const [members, setMembers] = useState<ClubMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -40,17 +44,37 @@ export default function ClubMembers() {
 
   const handleRoleChange = async (memberId: number, newRole: 'owner' | 'admin' | 'member') => {
     if (!canManageRoles) {
-      alert('권한이 없습니다.');
+      toast({
+        variant: "destructive",
+        title: "권한 없음",
+        description: "권한이 없습니다.",
+      });
       return;
     }
 
-    if (!confirm(`정말 권한을 변경하시겠습니까?`)) return;
+    const confirmed = await confirm({
+      title: "권한 변경 확인",
+      description: "정말 권한을 변경하시겠습니까?",
+      confirmText: "변경",
+      cancelText: "취소",
+      confirmVariant: "default",
+    });
+
+    if (!confirmed) return;
 
     try {
       await clubMemberService.updateMemberRole(memberId, newRole);
       await loadMembers();
+      toast({
+        title: "권한 변경 완료",
+        description: "멤버 권한이 변경되었습니다.",
+      });
     } catch (err) {
-      alert('권한 변경에 실패했습니다.');
+      toast({
+        variant: "destructive",
+        title: "권한 변경 실패",
+        description: "권한 변경에 실패했습니다.",
+      });
       console.error(err);
     }
   };
@@ -205,6 +229,7 @@ export default function ClubMembers() {
           )}
         </CardContent>
       </Card>
+      <ConfirmDialog />
     </div>
   );
 }
