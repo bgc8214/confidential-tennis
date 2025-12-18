@@ -29,6 +29,11 @@ export default function AttendeeSelector({
     }
   };
 
+  // 선택된 회원의 성별별 인원 수 계산
+  const selectedMembers = members.filter(m => selectedMemberIds.includes(m.id));
+  const maleCount = selectedMembers.filter(m => m.gender === 'male').length;
+  const femaleCount = selectedMembers.filter(m => m.gender === 'female').length;
+
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
@@ -89,9 +94,23 @@ export default function AttendeeSelector({
       )}
 
       <div className="mt-4 pt-4 border-t border-gray-200">
-        <p className="text-sm text-gray-600">
-          선택된 회원: <span className="font-bold text-gray-900">{selectedMemberIds.length}</span>명
-        </p>
+        <div className="flex items-center justify-between text-sm">
+          <div className="text-gray-600">
+            선택된 회원: <span className="font-bold text-gray-900">{selectedMemberIds.length}</span>명
+          </div>
+          {selectedMemberIds.length > 0 && (
+            <div className="flex gap-3">
+              <span className="flex items-center gap-1">
+                <span className="inline-block w-2 h-2 rounded-full bg-blue-500"></span>
+                <span className="text-gray-600">남자 <span className="font-bold text-blue-700">{maleCount}</span>명</span>
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="inline-block w-2 h-2 rounded-full bg-pink-500"></span>
+                <span className="text-gray-600">여자 <span className="font-bold text-pink-700">{femaleCount}</span>명</span>
+              </span>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

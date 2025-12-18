@@ -58,6 +58,7 @@ export interface Attendance {
   schedule_id: number;
   member_id?: number;
   guest_name?: string;
+  gender?: 'male' | 'female'; // 게스트의 성별 (is_guest=true인 경우 사용)
   is_guest: boolean;
   created_at: string;
   member?: Member;
