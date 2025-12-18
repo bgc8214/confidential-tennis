@@ -6,7 +6,7 @@ import { attendanceService } from '../services/attendanceService';
 import { useClub } from '../contexts/ClubContext';
 import type { Member, MatchSettings } from '../types';
 import AttendeeSelector from '../components/AttendeeSelector';
-import GuestInput from '../components/GuestInput';
+import GuestInput, { type Guest } from '../components/GuestInput';
 import ConstraintPanel, { type ConstraintData } from '../components/ConstraintPanel';
 import AdvancedScheduleSettings from '../components/AdvancedScheduleSettings';
 import { useToast } from '../hooks/use-toast';
@@ -40,7 +40,7 @@ export default function ScheduleCreation() {
   const { toast } = useToast();
   const [members, setMembers] = useState<Member[]>([]);
   const [selectedMemberIds, setSelectedMemberIds] = useState<number[]>([]);
-  const [guests, setGuests] = useState<string[]>([]);
+  const [guests, setGuests] = useState<Guest[]>([]);
   const [date, setDate] = useState('');
   const [startTime, setStartTime] = useState('10:00');
   const [endTime, setEndTime] = useState('13:00');
@@ -118,18 +118,21 @@ export default function ScheduleCreation() {
       // 참석자 로드
       const attendancesData = await attendanceService.getByScheduleId(scheduleIdNum);
       const memberIds: number[] = [];
-      const guestNames: string[] = [];
+      const guestData: Guest[] = [];
 
       attendancesData.forEach(att => {
         if (att.is_guest && att.guest_name) {
-          guestNames.push(att.guest_name);
+          guestData.push({
+            name: att.guest_name,
+            gender: att.gender || 'male' // 기본값
+          });
         } else if (att.member_id) {
           memberIds.push(att.member_id);
         }
       });
 
       setSelectedMemberIds(memberIds);
-      setGuests(guestNames);
+      setGuests(guestData);
 
       // 제약조건 로드
       const constraintsData = await scheduleService.getConstraints(scheduleIdNum);
@@ -183,14 +186,14 @@ export default function ScheduleCreation() {
     );
   };
 
-  const handleAddGuest = (guestName: string) => {
-    if (guestName.trim() && !guests.includes(guestName.trim())) {
-      setGuests(prev => [...prev, guestName.trim()]);
+  const handleAddGuest = (guest: Guest) => {
+    if (guest.name.trim() && !guests.some(g => g.name === guest.name.trim())) {
+      setGuests(prev => [...prev, guest]);
     }
   };
 
   const handleRemoveGuest = (guestName: string) => {
-    setGuests(prev => prev.filter(name => name !== guestName));
+    setGuests(prev => prev.filter(g => g.name !== guestName));
   };
 
   const handleDateChange = async (newDate: string) => {
@@ -292,8 +295,9 @@ export default function ScheduleCreation() {
           member_id: memberId,
           is_guest: false
         })),
-        ...guests.map(guestName => ({
-          guest_name: guestName,
+        ...guests.map(guest => ({
+          guest_name: guest.name,
+          gender: guest.gender,
           is_guest: true
         }))
       ];
