@@ -78,7 +78,7 @@ export default function Home() {
                 <div className="relative">
                   <div className="w-40 h-40 md:w-48 md:h-48 rounded-full overflow-hidden shadow-2xl ring-4 ring-emerald-500/30 animate-bounce-gentle">
                     <img
-                      src="/seolha.png"
+                      src={`${import.meta.env.BASE_URL}seolha.png`}
                       alt="코트플래너 마스코트"
                       className="w-full h-full object-cover"
                     />

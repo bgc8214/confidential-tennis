@@ -1,18 +1,20 @@
 import { useState } from 'react';
-import type { Member } from '../types';
+import type { Member, Attendance } from '../types';
+import type { Guest } from './GuestInput';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 
 export interface ConstraintData {
-  excludeLastMatch: number[]; // 마지막 경기 제외할 회원 ID 목록
-  partnerPairs: Array<[number, number]>; // 파트너 페어 (회원 ID 쌍)
-  excludeMatches: Array<{ memberId: number; matchNumber: number }>; // 특정 경기 제외
-  matchCounts?: Array<{ memberId: number; count: number }>; // 개인별 경기 수 설정
+  excludeLastMatch: number[]; // 마지막 경기 제외할 참석자 ID 목록 (회원: member_id, 게스트: 음수 임시 ID)
+  partnerPairs: Array<[number, number]>; // 파트너 페어 (회원: member_id, 게스트: 음수 임시 ID)
+  excludeMatches: Array<{ memberId: number; matchNumber: number }>; // 특정 경기 제외 (회원: member_id, 게스트: 음수 임시 ID)
+  matchCounts?: Array<{ memberId: number; count: number }>; // 개인별 경기 수 설정 (회원: member_id, 게스트: 음수 임시 ID)
 }
 
 interface ConstraintPanelProps {
   members: Member[];
   selectedMemberIds: number[];
+  guests: Guest[];
   constraints: ConstraintData;
   onConstraintsChange: (constraints: ConstraintData) => void;
   totalMatches?: number; // 총 경기 수 (경기 수 선택 드롭다운용)
@@ -21,6 +23,7 @@ interface ConstraintPanelProps {
 export default function ConstraintPanel({
   members,
   selectedMemberIds,
+  guests,
   constraints,
   onConstraintsChange,
   totalMatches = 6
@@ -29,6 +32,13 @@ export default function ConstraintPanel({
 
   // 선택된 회원만 필터링
   const selectedMembers = members.filter(m => selectedMemberIds.includes(m.id));
+
+  // 회원과 게스트를 합쳐서 참석자 목록 생성
+  // 게스트는 음수 ID를 사용 (-1, -2, ...)
+  const attendees = [
+    ...selectedMembers.map(m => ({ id: m.id, name: m.name, isGuest: false })),
+    ...guests.map((g, idx) => ({ id: -(idx + 1), name: g.name, isGuest: true }))
+  ];
 
   // 개인별 경기 수 설정
   const [matchCountMemberId, setMatchCountMemberId] = useState<number | ''>('');
@@ -140,8 +150,12 @@ export default function ConstraintPanel({
     });
   };
 
-  const getMemberName = (memberId: number) => {
-    return members.find(m => m.id === memberId)?.name || '알 수 없음';
+  const getAttendeeName = (attendeeId: number) => {
+    const attendee = attendees.find(a => a.id === attendeeId);
+    if (attendee) {
+      return attendee.isGuest ? `${attendee.name} (게스트)` : attendee.name;
+    }
+    return '알 수 없음';
   };
 
   const totalConstraints =
@@ -181,7 +195,7 @@ export default function ConstraintPanel({
 
       {isExpanded && (
         <CardContent className="space-y-6 pt-6 border-t">
-          {selectedMembers.length === 0 ? (
+          {attendees.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               먼저 참석자를 선택해주세요
             </div>
@@ -204,14 +218,14 @@ export default function ConstraintPanel({
                     onChange={(e) => setMatchCountMemberId(e.target.value ? Number(e.target.value) : '')}
                     className="flex-1 min-w-[140px] px-4 py-2 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#F4CE6A]"
                   >
-                    <option value="">회원 선택</option>
-                    {selectedMembers.map(m => (
+                    <option value="">참석자 선택</option>
+                    {attendees.map(a => (
                       <option
-                        key={m.id}
-                        value={m.id}
-                        disabled={constraints.matchCounts?.some(mc => mc.memberId === m.id)}
+                        key={a.id}
+                        value={a.id}
+                        disabled={constraints.matchCounts?.some(mc => mc.memberId === a.id)}
                       >
-                        {m.name}
+                        {a.isGuest ? `${a.name} (게스트)` : a.name}
                       </option>
                     ))}
                   </select>
@@ -238,14 +252,14 @@ export default function ConstraintPanel({
 
                 {constraints.matchCounts && constraints.matchCounts.length > 0 && (
                   <div className="space-y-2">
-                    <p className="text-sm text-gray-600">설정된 회원:</p>
+                    <p className="text-sm text-gray-600">설정된 참석자:</p>
                     {constraints.matchCounts.map(mc => (
                       <div
                         key={mc.memberId}
                         className="flex items-center justify-between px-4 py-3 bg-[#F4CE6A]/10 border-2 border-[#F4CE6A]/30 rounded-xl"
                       >
                         <span className="text-sm font-medium text-gray-900">
-                          • {getMemberName(mc.memberId)}: {mc.count}경기
+                          • {getAttendeeName(mc.memberId)}: {mc.count}경기
                         </span>
                         <button
                           type="button"
@@ -273,26 +287,28 @@ export default function ConstraintPanel({
                     🏁 마지막 경기 제외
                   </h4>
                   <p className="text-sm text-gray-600">
-                    조기 퇴장이 필요한 회원을 선택하세요 (6번째 경기 제외)
+                    조기 퇴장이 필요한 참석자를 선택하세요 (6번째 경기 제외)
                   </p>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                  {selectedMembers.map(member => (
+                  {attendees.map(attendee => (
                     <label
-                      key={member.id}
+                      key={attendee.id}
                       className={`flex items-center space-x-2 px-4 py-3 rounded-xl border-2 cursor-pointer transition-all ${
-                        constraints.excludeLastMatch.includes(member.id)
+                        constraints.excludeLastMatch.includes(attendee.id)
                           ? 'bg-[#D4765A]/10 border-[#D4765A] text-[#D4765A] font-medium'
                           : 'bg-white border-gray-200 hover:border-gray-300'
                       }`}
                     >
                       <input
                         type="checkbox"
-                        checked={constraints.excludeLastMatch.includes(member.id)}
-                        onChange={() => handleExcludeLastMatchToggle(member.id)}
+                        checked={constraints.excludeLastMatch.includes(attendee.id)}
+                        onChange={() => handleExcludeLastMatchToggle(attendee.id)}
                         className="w-4 h-4 text-[#D4765A] rounded focus:ring-[#D4765A]"
                       />
-                      <span className="text-sm">{member.name}</span>
+                      <span className="text-sm">
+                        {attendee.isGuest ? `${attendee.name} (게스트)` : attendee.name}
+                      </span>
                     </label>
                   ))}
                 </div>
@@ -316,9 +332,9 @@ export default function ConstraintPanel({
                     className="flex-1 min-w-[140px] px-4 py-2 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#2E7D4E]"
                   >
                     <option value="">선수 1 선택</option>
-                    {selectedMembers.map(m => (
-                      <option key={m.id} value={m.id} disabled={m.id === partner2}>
-                        {m.name}
+                    {attendees.map(a => (
+                      <option key={a.id} value={a.id} disabled={a.id === partner2}>
+                        {a.isGuest ? `${a.name} (게스트)` : a.name}
                       </option>
                     ))}
                   </select>
@@ -331,9 +347,9 @@ export default function ConstraintPanel({
                     className="flex-1 min-w-[140px] px-4 py-2 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#2E7D4E]"
                   >
                     <option value="">선수 2 선택</option>
-                    {selectedMembers.map(m => (
-                      <option key={m.id} value={m.id} disabled={m.id === partner1}>
-                        {m.name}
+                    {attendees.map(a => (
+                      <option key={a.id} value={a.id} disabled={a.id === partner1}>
+                        {a.isGuest ? `${a.name} (게스트)` : a.name}
                       </option>
                     ))}
                   </select>
@@ -356,7 +372,7 @@ export default function ConstraintPanel({
                         className="flex items-center justify-between px-4 py-3 bg-[#2E7D4E]/10 border-2 border-[#2E7D4E]/30 rounded-xl"
                       >
                         <span className="text-sm font-medium text-gray-900">
-                          {getMemberName(pair[0])} & {getMemberName(pair[1])}
+                          {getAttendeeName(pair[0])} & {getAttendeeName(pair[1])}
                         </span>
                         <button
                           type="button"
@@ -388,9 +404,11 @@ export default function ConstraintPanel({
                     onChange={(e) => setExcludeMemberId(e.target.value ? Number(e.target.value) : '')}
                     className="flex-1 min-w-[140px] px-4 py-2 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-[#D4765A]"
                   >
-                    <option value="">회원 선택</option>
-                    {selectedMembers.map(m => (
-                      <option key={m.id} value={m.id}>{m.name}</option>
+                    <option value="">참석자 선택</option>
+                    {attendees.map(a => (
+                      <option key={a.id} value={a.id}>
+                        {a.isGuest ? `${a.name} (게스트)` : a.name}
+                      </option>
                     ))}
                   </select>
 
@@ -423,7 +441,7 @@ export default function ConstraintPanel({
                         className="flex items-center justify-between px-4 py-3 bg-[#D4765A]/10 border-2 border-[#D4765A]/30 rounded-xl"
                       >
                         <span className="text-sm font-medium text-gray-900">
-                          {getMemberName(exclude.memberId)} - 경기 {exclude.matchNumber} 제외
+                          {getAttendeeName(exclude.memberId)} - 경기 {exclude.matchNumber} 제외
                         </span>
                         <button
                           type="button"

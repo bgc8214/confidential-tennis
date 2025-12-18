@@ -17,10 +17,13 @@ const getCourtLabel = (index: number): string => {
   return String.fromCharCode(65 + index); // 65 = 'A'
 };
 
-// 참석자의 성별 가져오기
-const getGender = (attendee: Attendance): 'male' | 'female' | 'guest' => {
-  if (attendee.is_guest) return 'guest';
-  return attendee.member?.gender || 'guest';
+// 참석자의 성별 가져오기 (게스트도 성별이 있음)
+const getGender = (attendee: Attendance): 'male' | 'female' => {
+  if (attendee.is_guest) {
+    // 게스트도 성별이 있음 (guest_gender 필드)
+    return attendee.guest_gender || 'male';
+  }
+  return attendee.member?.gender || 'male';
 };
 
 // 경기 타입에 따라 유효한 참석자 필터링
@@ -29,15 +32,9 @@ const filterAttendeesByType = (
   type: 'mixed' | 'mens' | 'womens'
 ): Attendance[] => {
   if (type === 'mens') {
-    return attendees.filter(a => {
-      const gender = getGender(a);
-      return gender === 'male' || gender === 'guest';
-    });
+    return attendees.filter(a => getGender(a) === 'male');
   } else if (type === 'womens') {
-    return attendees.filter(a => {
-      const gender = getGender(a);
-      return gender === 'female' || gender === 'guest';
-    });
+    return attendees.filter(a => getGender(a) === 'female');
   }
   return attendees; // mixed는 전체
 };
@@ -50,62 +47,31 @@ const formMixedTeams = (
 
   const males = players.filter(p => getGender(p) === 'male');
   const females = players.filter(p => getGender(p) === 'female');
-  const guests = players.filter(p => getGender(p) === 'guest');
 
   console.log('formMixedTeams 입력:', {
     총인원: players.length,
     남자: males.length,
     여자: females.length,
-    게스트: guests.length,
-    players: players.map(p => ({ name: p.member?.name || p.guest_name, gender: getGender(p) }))
+    players: players.map(p => ({
+      name: p.is_guest ? p.guest_name : p.member?.name,
+      gender: getGender(p),
+      isGuest: p.is_guest
+    }))
   });
 
-  // 이상적인 혼복: 남자 2명, 여자 2명 (게스트는 어디든 가능)
-  if (males.length + guests.length >= 2 && females.length + guests.length >= 2) {
-    let team1Male: Attendance | undefined;
-    let team1Female: Attendance | undefined;
-    let team2Male: Attendance | undefined;
-    let team2Female: Attendance | undefined;
-
-    // 남자 배정
-    if (males.length >= 2) {
-      team1Male = males[0];
-      team2Male = males[1];
-    } else if (males.length === 1 && guests.length >= 1) {
-      team1Male = males[0];
-      team2Male = guests[0];
-    } else if (males.length === 0 && guests.length >= 2) {
-      team1Male = guests[0];
-      team2Male = guests[1];
-    }
-
-    // 여자 배정
-    const remainingGuests = guests.filter(g => g !== team1Male && g !== team2Male);
-    if (females.length >= 2) {
-      team1Female = females[0];
-      team2Female = females[1];
-    } else if (females.length === 1 && remainingGuests.length >= 1) {
-      team1Female = females[0];
-      team2Female = remainingGuests[0];
-    } else if (females.length === 0 && remainingGuests.length >= 2) {
-      team1Female = remainingGuests[0];
-      team2Female = remainingGuests[1];
-    }
-
-    if (team1Male && team1Female && team2Male && team2Female) {
-      return {
-        team1: [team1Male, team1Female],
-        team2: [team2Male, team2Female]
-      };
-    }
+  // 이상적인 혼복: 남자 2명, 여자 2명
+  if (males.length >= 2 && females.length >= 2) {
+    return {
+      team1: [males[0], females[0]],
+      team2: [males[1], females[1]]
+    };
   }
 
   // 혼복 구성이 불가능한 경우 (예: 남자 1명, 여자 3명)
   // 폴백: 그냥 순서대로 배정
   console.warn('혼복 구성 불가능, 순서대로 배정:', {
     males: males.length,
-    females: females.length,
-    guests: guests.length
+    females: females.length
   });
 
   return {
@@ -349,7 +315,7 @@ export function generateSchedule(options: GenerationOptions): GeneratedMatch[] {
               }
 
               // 성별이 해당 코트 타입에 참여 가능한지 확인
-              if (futureCourtType === 'mixed' || gender === 'guest') {
+              if (futureCourtType === 'mixed') {
                 canParticipate = true;
                 break;
               } else if (futureCourtType === 'mens' && gender === 'male') {
@@ -524,20 +490,12 @@ export function generateSchedule(options: GenerationOptions): GeneratedMatch[] {
           if (courtType === 'mixed') {
             canApplyPair = (
               (gender1 === 'male' && gender2 === 'female') ||
-              (gender1 === 'female' && gender2 === 'male') ||
-              gender1 === 'guest' ||
-              gender2 === 'guest'
+              (gender1 === 'female' && gender2 === 'male')
             );
           } else if (courtType === 'mens') {
-            canApplyPair = (
-              (gender1 === 'male' || gender1 === 'guest') &&
-              (gender2 === 'male' || gender2 === 'guest')
-            );
+            canApplyPair = (gender1 === 'male' && gender2 === 'male');
           } else if (courtType === 'womens') {
-            canApplyPair = (
-              (gender1 === 'female' || gender1 === 'guest') &&
-              (gender2 === 'female' || gender2 === 'guest')
-            );
+            canApplyPair = (gender1 === 'female' && gender2 === 'female');
           }
 
           if (canApplyPair) {

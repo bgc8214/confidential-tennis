@@ -25,7 +25,7 @@ export default function LoadingMascot({
         <div className={`absolute inset-0 flex items-center justify-center ${sizeClasses[size]}`}>
           <div className="w-[85%] h-[85%] rounded-full overflow-hidden shadow-lg animate-bounce-gentle">
             <img
-              src="/seolha.png"
+              src={`${import.meta.env.BASE_URL}seolha.png`}
               alt="로딩 중"
               className="w-full h-full object-cover"
             />

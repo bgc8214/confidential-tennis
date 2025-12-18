@@ -45,7 +45,7 @@ export default function Layout() {
             <Link to="/" className="flex items-center gap-2 sm:gap-3" onClick={closeMobileMenu}>
               <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden shadow-lg ring-2 ring-emerald-500/20">
                 <img
-                  src="/seolha.png"
+                  src={`${import.meta.env.BASE_URL}seolha.png`}
                   alt="코트플래너 마스코트"
                   className="w-full h-full object-cover"
                 />
