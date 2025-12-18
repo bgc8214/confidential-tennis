@@ -15,7 +15,7 @@ export default function NotFound() {
             {/* 마스코트 */}
             <div className="relative w-64 h-64 rounded-full overflow-hidden shadow-2xl ring-4 ring-emerald-500/20 animate-bounce-gentle">
               <img
-                src="/seolha.png"
+                src={`${import.meta.env.BASE_URL}seolha.png`}
                 alt="길을 잃은 마스코트"
                 className="w-full h-full object-cover"
               />

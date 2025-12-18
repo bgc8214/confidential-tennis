@@ -523,6 +523,7 @@ export default function ScheduleCreation() {
           <ConstraintPanel
             members={members}
             selectedMemberIds={selectedMemberIds}
+            guests={guests}
             constraints={constraints}
             onConstraintsChange={setConstraints}
             totalMatches={matchSettings.totalMatches}
