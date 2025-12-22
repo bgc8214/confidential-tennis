@@ -14,7 +14,7 @@ import {
 } from '@dnd-kit/sortable';
 import html2canvas from 'html2canvas';
 import { scheduleService } from '../services/scheduleService';
-import { generateSchedule, convertMatchesToDbFormat } from '../utils/scheduleGenerator';
+import { generateSchedule, convertMatchesToDbFormat, type ScheduleGenerationResult } from '../utils/scheduleGenerator';
 import type { Attendance, GeneratedMatch } from '../types';
 import DraggableMatchCard from '../components/DraggableMatchCard';
 import CompactScheduleView from '../components/CompactScheduleView';
@@ -29,6 +29,7 @@ export default function ScheduleGenerator() {
   const { toast } = useToast();
   const [attendances, setAttendances] = useState<Attendance[]>([]);
   const [matches, setMatches] = useState<GeneratedMatch[]>([]);
+  const [participantStats, setParticipantStats] = useState<Map<number, number[]>>(new Map());
   const [schedule, setSchedule] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -111,7 +112,7 @@ export default function ScheduleGenerator() {
         courtTypes = scheduleData.court_types;
       }
       
-      const generatedMatches = generateSchedule({
+      const result = generateSchedule({
         attendees: attendanceData,
         constraints: constraintsData,
         startTime: scheduleData.start_time || '10:00',
@@ -123,13 +124,15 @@ export default function ScheduleGenerator() {
         matchType: scheduleData.match_type || 'mixed' // 하위 호환성
       });
 
-      console.log('생성된 경기:', generatedMatches);
+      console.log('생성된 경기:', result.matches);
+      console.log('참가자 통계:', result.participantStats);
 
-      if (!generatedMatches || generatedMatches.length === 0) {
+      if (!result.matches || result.matches.length === 0) {
         throw new Error('경기를 생성할 수 없습니다. 참석자 수를 확인해주세요.');
       }
 
-      setMatches(generatedMatches);
+      setMatches(result.matches);
+      setParticipantStats(result.participantStats);
       setError(null);
     } catch (err: any) {
       const errorMessage = err?.message || '스케줄 데이터를 불러오는데 실패했습니다.';
@@ -603,12 +606,22 @@ export default function ScheduleGenerator() {
               const stats = playerStats.get(playerId) || { mixed: 0, mens: 0, womens: 0 };
               const totalMatches = stats.mixed + stats.mens + stats.womens;
 
+              // 출전 경기 번호 가져오기
+              const matchNumbers = participantStats.get(attendance.id) || [];
+              const matchNumbersText = matchNumbers.length > 0
+                ? matchNumbers.join(', ')
+                : '없음';
+
               return (
-                <div key={playerId} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                <div key={playerId} className="bg-gray-50 rounded-lg p-3 border border-gray-200 hover:border-emerald-300 hover:bg-emerald-50/50 transition-all">
                   <div className="font-semibold text-gray-900 mb-2">{playerName || '알 수 없음'}</div>
-                  <div className="text-sm space-y-1">
+                  <div className="text-sm space-y-1.5">
                     <div className="text-gray-600">
                       총 <span className="font-bold text-gray-900">{totalMatches}</span>경기
+                    </div>
+                    <div className="flex items-center gap-1.5 text-emerald-700 bg-emerald-100/50 rounded px-2 py-1">
+                      <span className="font-medium">출전:</span>
+                      <span className="font-mono font-semibold">{matchNumbersText}</span>
                     </div>
                     {stats.mixed > 0 && (
                       <div className="text-purple-600">혼복 {stats.mixed}경기</div>
