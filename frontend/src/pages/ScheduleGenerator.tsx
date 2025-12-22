@@ -186,7 +186,142 @@ export default function ScheduleGenerator() {
         ? overMatch.team1[overData.playerIdx]
         : overMatch.team2[overData.playerIdx - 2];
 
-      // Swap players
+      // Helper function to get player gender
+      const getGender = (player: typeof activePlayer): 'male' | 'female' => {
+        if (player.is_guest) {
+          return player.guest_gender || 'male';
+        }
+        return player.member?.gender || 'male';
+      };
+
+      // Helper function to check if player exists in match
+      const isPlayerInMatch = (match: typeof activeMatch, playerId: number): boolean => {
+        return [...match.team1, ...match.team2].some(p => p.id === playerId);
+      };
+
+      // 검증 1: 같은 경기 내 중복 방지
+      if (activeMatch.match_number === overMatch.match_number && activeMatch.court === overMatch.court) {
+        // 같은 경기 내에서는 중복 체크 불필요 (swap이므로)
+      } else {
+        // 다른 경기로 이동하는 경우
+        // activePlayer가 overMatch에 이미 있는지 확인
+        if (isPlayerInMatch(overMatch, activePlayer.id)) {
+          toast({
+            title: '교체 불가',
+            description: `${activePlayer.is_guest ? activePlayer.guest_name : activePlayer.member?.name}님이 이미 해당 경기에 배정되어 있습니다.`,
+            variant: 'destructive',
+          });
+          return prevMatches;
+        }
+        // overPlayer가 activeMatch에 이미 있는지 확인
+        if (isPlayerInMatch(activeMatch, overPlayer.id)) {
+          toast({
+            title: '교체 불가',
+            description: `${overPlayer.is_guest ? overPlayer.guest_name : overPlayer.member?.name}님이 이미 해당 경기에 배정되어 있습니다.`,
+            variant: 'destructive',
+          });
+          return prevMatches;
+        }
+      }
+
+      // 검증 2: 혼복 성별 규칙 확인
+      if (activeMatch.match_type === 'mixed') {
+        // activeMatch에 activePlayer 대신 overPlayer를 넣었을 때 성별 규칙 확인
+        const tempActiveMatch = JSON.parse(JSON.stringify(activeMatch));
+        if (activeData.playerIdx < 2) {
+          tempActiveMatch.team1[activeData.playerIdx] = overPlayer;
+        } else {
+          tempActiveMatch.team2[activeData.playerIdx - 2] = overPlayer;
+        }
+
+        // 각 팀이 남녀 1명씩인지 확인
+        const team1Genders = tempActiveMatch.team1.map(getGender);
+        const team2Genders = tempActiveMatch.team2.map(getGender);
+
+        const isTeam1Valid = team1Genders.includes('male') && team1Genders.includes('female');
+        const isTeam2Valid = team2Genders.includes('male') && team2Genders.includes('female');
+
+        if (!isTeam1Valid || !isTeam2Valid) {
+          toast({
+            title: '혼복 규칙 위반',
+            description: '혼복 경기는 각 팀이 남자 1명, 여자 1명으로 구성되어야 합니다.',
+            variant: 'destructive',
+          });
+          return prevMatches;
+        }
+      }
+
+      if (overMatch.match_type === 'mixed') {
+        // overMatch에 overPlayer 대신 activePlayer를 넣었을 때 성별 규칙 확인
+        const tempOverMatch = JSON.parse(JSON.stringify(overMatch));
+        if (overData.playerIdx < 2) {
+          tempOverMatch.team1[overData.playerIdx] = activePlayer;
+        } else {
+          tempOverMatch.team2[overData.playerIdx - 2] = activePlayer;
+        }
+
+        const team1Genders = tempOverMatch.team1.map(getGender);
+        const team2Genders = tempOverMatch.team2.map(getGender);
+
+        const isTeam1Valid = team1Genders.includes('male') && team1Genders.includes('female');
+        const isTeam2Valid = team2Genders.includes('male') && team2Genders.includes('female');
+
+        if (!isTeam1Valid || !isTeam2Valid) {
+          toast({
+            title: '혼복 규칙 위반',
+            description: '혼복 경기는 각 팀이 남자 1명, 여자 1명으로 구성되어야 합니다.',
+            variant: 'destructive',
+          });
+          return prevMatches;
+        }
+      }
+
+      // 검증 3: 남복/여복 성별 규칙 확인
+      if (activeMatch.match_type === 'mens') {
+        if (getGender(overPlayer) !== 'male') {
+          toast({
+            title: '남복 규칙 위반',
+            description: '남복 경기는 남자만 참여할 수 있습니다.',
+            variant: 'destructive',
+          });
+          return prevMatches;
+        }
+      }
+
+      if (activeMatch.match_type === 'womens') {
+        if (getGender(overPlayer) !== 'female') {
+          toast({
+            title: '여복 규칙 위반',
+            description: '여복 경기는 여자만 참여할 수 있습니다.',
+            variant: 'destructive',
+          });
+          return prevMatches;
+        }
+      }
+
+      if (overMatch.match_type === 'mens') {
+        if (getGender(activePlayer) !== 'male') {
+          toast({
+            title: '남복 규칙 위반',
+            description: '남복 경기는 남자만 참여할 수 있습니다.',
+            variant: 'destructive',
+          });
+          return prevMatches;
+        }
+      }
+
+      if (overMatch.match_type === 'womens') {
+        if (getGender(activePlayer) !== 'female') {
+          toast({
+            title: '여복 규칙 위반',
+            description: '여복 경기는 여자만 참여할 수 있습니다.',
+            variant: 'destructive',
+          });
+          return prevMatches;
+        }
+      }
+
+      // 모든 검증 통과 - Swap players
       if (activeData.playerIdx < 2) {
         activeMatch.team1[activeData.playerIdx] = overPlayer;
       } else {
@@ -198,6 +333,11 @@ export default function ScheduleGenerator() {
       } else {
         overMatch.team2[overData.playerIdx - 2] = activePlayer;
       }
+
+      toast({
+        title: '선수 교체 완료',
+        description: '선수가 성공적으로 교체되었습니다.',
+      });
 
       return newMatches;
     });
