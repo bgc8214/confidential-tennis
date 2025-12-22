@@ -101,6 +101,12 @@ const formSameGenderTeams = (
   return null;
 };
 
+// 스케줄 생성 결과 타입
+export interface ScheduleGenerationResult {
+  matches: GeneratedMatch[];
+  participantStats: Map<number, number[]>; // attendee id -> match numbers played
+}
+
 /**
  * 테니스 경기 스케줄 자동 생성 알고리즘
  *
@@ -110,8 +116,10 @@ const formSameGenderTeams = (
  * 3. 여복: 반드시 여여 vs 여여
  * 4. 모든 참석자가 최대한 동일한 경기 수
  * 5. 파트너 지정: 해당 인원이 경기에 들어갈 때만 파트너로 배치
+ * 6. 연속 3경기 출전 최소화
+ * 7. 연속 2경기 휴식 최소화
  */
-export function generateSchedule(options: GenerationOptions): GeneratedMatch[] {
+export function generateSchedule(options: GenerationOptions): ScheduleGenerationResult {
   const {
     attendees,
     constraints = [],
@@ -141,6 +149,10 @@ export function generateSchedule(options: GenerationOptions): GeneratedMatch[] {
   // 참여 횟수 추적
   const participationCount = new Map<number, number>();
   attendees.forEach(a => participationCount.set(a.id, 0));
+
+  // 각 참석자가 출전한 경기 번호 추적
+  const matchNumbersPlayed = new Map<number, number[]>();
+  attendees.forEach(a => matchNumbersPlayed.set(a.id, []));
 
   // KDK (Keep Different Partners) - 파트너 이력 추적
   const partnerHistory = new Map<number, Set<number>>();
@@ -237,6 +249,16 @@ export function generateSchedule(options: GenerationOptions): GeneratedMatch[] {
           }
         }
 
+        // 연속 3경기 방지: 이미 직전 2경기를 연속으로 뛴 경우 제외
+        const playedMatches = matchNumbersPlayed.get(a.id) || [];
+        if (playedMatches.length >= 2) {
+          const lastTwo = playedMatches.slice(-2);
+          // 직전 2경기가 연속인지 확인 (matchNum-2, matchNum-1)
+          if (lastTwo[0] === matchNum - 2 && lastTwo[1] === matchNum - 1) {
+            return false; // 3경기 연속 방지
+          }
+        }
+
         return true;
       });
 
@@ -269,6 +291,21 @@ export function generateSchedule(options: GenerationOptions): GeneratedMatch[] {
         const countB = participationCount.get(b.id) || 0;
         const memberIdA = a.member_id;
         const memberIdB = b.member_id;
+
+        // 연속 2경기 휴식 중인 사람 우선 (최우선 순위)
+        const playedMatchesA = matchNumbersPlayed.get(a.id) || [];
+        const playedMatchesB = matchNumbersPlayed.get(b.id) || [];
+
+        // 직전 2경기를 모두 쉰 경우 우선순위
+        const restedTwoA = matchNum >= 3 &&
+          !playedMatchesA.includes(matchNum - 2) &&
+          !playedMatchesA.includes(matchNum - 1);
+        const restedTwoB = matchNum >= 3 &&
+          !playedMatchesB.includes(matchNum - 2) &&
+          !playedMatchesB.includes(matchNum - 1);
+
+        if (restedTwoA && !restedTwoB) return -1;
+        if (!restedTwoA && restedTwoB) return 1;
 
         // 목표 경기 수 가져오기
         const targetA = memberIdA ? targetMatchCounts.get(memberIdA) : undefined;
@@ -597,6 +634,10 @@ export function generateSchedule(options: GenerationOptions): GeneratedMatch[] {
           selectedPlayers.forEach(p => {
             const count = participationCount.get(p.id) || 0;
             participationCount.set(p.id, count + 1);
+
+            // 출전 경기 번호 기록
+            const matches = matchNumbersPlayed.get(p.id) || [];
+            matchNumbersPlayed.set(p.id, [...matches, matchNum]);
           });
 
           // KDK: 파트너 이력 업데이트
@@ -615,7 +656,10 @@ export function generateSchedule(options: GenerationOptions): GeneratedMatch[] {
     }
   }
 
-  return matches;
+  return {
+    matches,
+    participantStats: matchNumbersPlayed
+  };
 }
 
 /**
